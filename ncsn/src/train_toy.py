@@ -24,9 +24,10 @@ PARAMS = {
     "batch_size": 128,
     "epochs": 10000, 
     "learning_rate": 0.001,
-    "num_L":10,
-    "sigma_low":1.0,
-    "sigma_high":20.0
+    "num_L": 10,
+    "sigma_low": 1.0,
+    "sigma_high": 20.0,
+    "epsilon": 0.1
 }
 #%%
 '''true data distribution (Gaussian mixture)'''
@@ -84,7 +85,7 @@ def ssm_loss(scorenet, x_batch):
     return loss
 #%%
 model = ModelMLP(activation=tf.nn.softplus)
-optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
+optimizer = tf.keras.optimizers.Adam(learning_rate=PARAMS['learning_rate'])
 
 step = 0
 progress_bar = tqdm(range(PARAMS['epochs']))
@@ -164,9 +165,8 @@ sigma_levels = tf.math.exp(tf.linspace(tf.math.log(PARAMS['sigma_high']),
                                         tf.math.log(PARAMS['sigma_low']),
                                         PARAMS['num_L']))
 
-epsilon = 0.1
 x_init = tf.random.uniform(shape=(1280, 2), minval=-8, maxval=8)
-samples = annealed_langevin_dynamics(analytic_log_gmm_prob_grad, x_init, sigma_levels, T=100, eps=epsilon)
+samples = annealed_langevin_dynamics(analytic_log_gmm_prob_grad, x_init, sigma_levels, T=100, eps=PARAMS['epsilon'])
 #%%
 '''plot density and generated samples'''
 x = np.linspace(-8, 8, 500, dtype=np.float32)

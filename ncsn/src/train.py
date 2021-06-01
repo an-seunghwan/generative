@@ -50,19 +50,3 @@ for epoch in PARAMS['epochs']:
     for x_batch in tqdm(train_dataset, desc='iteration {}'.format(step)):
         
 #%%
-# step = 0
-# progress_bar = tqdm(train_dataset, total=PARAMS['epochs'])
-# progress_bar.set_description('iteration {}/{} | current loss ?'.format(step, PARAMS['epochs']))
-
-# loss_history = []
-# avg_loss = 0
-# for x_batch in progress_bar:
-#     step += 1
-#     idx_sigmas = tf.random.uniform([x_batch.shape[0]], 
-#                                     minval=0,
-#                                     maxval=PARAMS['num_L'],
-#                                     dtype=tf.dtypes.int32)
-#     sigmas = tf.gather(sigma_levels, idx_sigmas)
-#     sigmas = tf.reshape(sigmas, shape=(x_batch.shape[0], 1, 1, 1))
-#     x_batch_perturbed = x_batch + tf.random.normal(shape=x_batch.shape) * sigmas
-#%%

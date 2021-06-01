@@ -32,7 +32,6 @@ PARAMS = {
 classnames = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
 classdict = {i:x for i,x in enumerate(classnames)}
 #%%
-#%%
 '''data'''
 (x_train, y_train), (x_test, y_test) = K.datasets.cifar10.load_data()
 PARAMS["data_dim"] = x_train.shape[1]

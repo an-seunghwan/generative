@@ -91,6 +91,7 @@ progress_bar = tqdm(range(PARAMS['epochs']))
 progress_bar.set_description('iteration {}/{} | current loss ?'.format(step, PARAMS['epochs']))
 #%%
 '''training'''
+loss_history = []
 for _ in progress_bar:
     x_batch = sample(gmm, PARAMS['batch_size'])
     step += 1
@@ -99,12 +100,20 @@ for _ in progress_bar:
         current_loss = ssm_loss(model, x_batch)
         gradients = tape.gradient(current_loss, model.trainable_variables)
     optimizer.apply_gradients(zip(gradients, model.trainable_variables))
+    
+    loss_history.append(current_loss.numpy())
 
     progress_bar.set_description('iteration {}/{} | current loss {:.3f}'.format(
         step, PARAMS['epochs'], current_loss
     ))
 
     if step == PARAMS['epochs']: break
+#%%
+fig, ax = plt.subplots(figsize=(9, 4))
+ax.plot(loss_history)
+ax.set_title('loss')
+plt.savefig('./ncsn/assets/toy_loss.png', bbox_inches="tight")
+plt.show()
 #%%
 @tf.function
 def analytic_log_gmm_prob_grad(x, sigma_i):
@@ -149,17 +158,6 @@ def meshgrid(x):
     gx, gy = np.float32(gx), np.float32(gy)
     grid = np.concatenate([gx.ravel()[None, :], gy.ravel()[None, :]], axis=0)
     return grid.T.reshape(x.size, y.size, 2)
-
-def visualize_gradients(x, grads, filename="gradients"):
-    U, V = grads[:, :, 1], grads[:, :, 0]
-    fig, ax = plt.subplots(figsize=(6, 6))
-    ax.quiver(x, x, U, V)
-    plt.gca().set_aspect('equal', adjustable='box')
-    ax.set_xlabel(r'$x$')
-    ax.set_ylabel(r'$y$')
-    # plt.savefig(f"{filename}.pdf", bbox_inches="tight")
-    plt.show()
-    return
 #%%
 '''geometric sequence of sigma'''
 sigma_levels = tf.math.exp(tf.linspace(tf.math.log(PARAMS['sigma_high']),
@@ -179,7 +177,7 @@ axes.flatten()[0].set_ylabel(r'$y$')
 axes.flatten()[0].set_title('i.i.d samples')
 axes.flatten()[1].scatter(samples.numpy()[:, 0], samples.numpy()[:, 1], s=0.5, marker='.', color='black')
 axes.flatten()[1].set_title('annealed Langevin dynamics samples')
-plt.savefig('./ncsn/assets/score.png', bbox_inches="tight")
+plt.savefig('./ncsn/assets/toy_score.png', bbox_inches="tight")
 plt.show()
 #%%
 '''true score vs estimated score'''
@@ -201,6 +199,6 @@ axes.flatten()[1].set_xlabel(r'$x$')
 axes.flatten()[1].set_ylabel(r'$y$')
 axes.flatten()[1].set_title('estimated scores')
 plt.gca().set_aspect('equal', adjustable='box')
-plt.savefig('./ncsn/assets/samples.png', bbox_inches="tight")
+plt.savefig('./ncsn/assets/toy_samples.png', bbox_inches="tight")
 plt.show()
 #%%

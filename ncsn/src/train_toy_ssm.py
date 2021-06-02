@@ -29,6 +29,8 @@ PARAMS = {
     "sigma_high": 20.0,
     "epsilon": 0.1
 }
+
+key = 'toy_ssm' # sliced score matching
 #%%
 '''true data distribution (Gaussian mixture)'''
 import tensorflow_probability as tfp
@@ -113,7 +115,7 @@ for _ in progress_bar:
 fig, ax = plt.subplots(figsize=(9, 4))
 ax.plot(loss_history)
 ax.set_title('loss')
-plt.savefig('./ncsn/assets/toy_loss.png', bbox_inches="tight")
+plt.savefig('./ncsn/assets/loss_{}.png'.format(key), bbox_inches="tight")
 plt.show()
 #%%
 @tf.function
@@ -177,7 +179,7 @@ axes.flatten()[0].set_ylabel(r'$y$')
 axes.flatten()[0].set_title('ground truth density')
 axes.flatten()[1].scatter(samples.numpy()[:, 0], samples.numpy()[:, 1], s=7, alpha=0.3, color='black')
 axes.flatten()[1].set_title('annealed Langevin dynamics samples')
-plt.savefig('./ncsn/assets/toy_score.png', bbox_inches="tight")
+plt.savefig('./ncsn/assets/samples_{}.png'.format(key), bbox_inches="tight")
 plt.show()
 #%%
 '''true score vs estimated score'''
@@ -199,6 +201,6 @@ axes.flatten()[1].set_xlabel(r'$x$')
 axes.flatten()[1].set_ylabel(r'$y$')
 axes.flatten()[1].set_title('estimated scores')
 plt.gca().set_aspect('equal', adjustable='box')
-plt.savefig('./ncsn/assets/toy_samples.png', bbox_inches="tight")
+plt.savefig('./ncsn/assets/scores_{}.png'.format(key), bbox_inches="tight")
 plt.show()
 #%%

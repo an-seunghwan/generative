@@ -9,13 +9,16 @@ class InstanceNormPlusPlus2D(layers.Layer):
         self.params = params
         self.feature_num = feature_num
         
-        self.alpha = self.add_weight(shape=(1, 1, 1, self.feature_num),
+        self.alpha = self.add_weight(name='alpha', 
+                                    shape=(1, 1, 1, self.feature_num),
                                     initializer='random_normal',
                                     trainable=True)
-        self.beta = self.add_weight(shape=(1, 1, 1, self.feature_num),
+        self.beta = self.add_weight(name='beta', 
+                                    shape=(1, 1, 1, self.feature_num),
                                     initializer='random_normal',   
                                     trainable=True)
-        self.gamma = self.add_weight(shape=(1, 1, 1, self.feature_num),
+        self.gamma = self.add_weight(name='gamma', 
+                                     shape=(1, 1, 1, self.feature_num),
                                     initializer='random_normal',   
                                     trainable=True)
 

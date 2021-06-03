@@ -25,14 +25,14 @@ from modules import ncsn_models
 #%%
 PARAMS = {
     "batch_size": 128,
-    "epochs": 10000, # 200000
-    "learning_rate": 0.001, # 0.0001
+    "epochs": 20000, # 200000
+    "learning_rate": 0.0001, 
     "channel": 3, # RGB
-    "num_L": 10,
-    "sigma_high": 10.0, # 50.0
+    "num_L": 200,
+    "sigma_high": 50.0,
     "sigma_low": 1.0,
-    "T": 100, # 5
-    "epsilon": 2*1e-5 # 6.2*1e-6
+    "T": 5,
+    "epsilon": 6.2*1e-6
 }
 
 key = 'cifar10'
@@ -106,8 +106,7 @@ for _ in progress_bar:
 
     if step == PARAMS['epochs']: break
 #%%
-'''save weights of model'''
-model.save_weights('./assets/weights')
+model.save_weights('./ncsn/assets/weights')
 #%%
 @tf.function
 def langevin_dynamics(scorenet, x, sigma_i=None, alpha=0.1, T=1000):

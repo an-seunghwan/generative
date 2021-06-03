@@ -73,6 +73,7 @@ def dsm_loss(score, x_perturbed, x, sigmas):
 def train_one_step(model, optimizer, x_batch_perturbed, x_batch, idx_sigmas, sigmas):
     with tf.GradientTape() as tape:
         # scores = model([x_batch_perturbed, idx_sigmas])
+        '''Technique 3. Noise conditioning'''
         scores = model(x_batch_perturbed) / sigmas
         current_loss = dsm_loss(scores, x_batch_perturbed, x_batch, sigmas)
         gradients = tape.gradient(current_loss, model.trainable_variables)

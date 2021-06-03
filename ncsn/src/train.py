@@ -5,7 +5,6 @@ with CIFAR-10 dataset
 #%%
 import tensorflow as tf
 import tensorflow.keras as K
-from tensorflow.keras import layers
 print('TensorFlow version:', tf.__version__)
 print('Eager Execution Mode:', tf.executing_eagerly())
 print('available GPU:', tf.config.list_physical_devices('GPU'))
@@ -19,18 +18,19 @@ import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
 import os
-os.chdir('/Users/anseunghwan/Documents/GitHub/generative')
+os.chdir(r'D:/generative')
+# os.chdir('/Users/anseunghwan/Documents/GitHub/generative')
 
 from modules import ncsn_models
 #%%
 PARAMS = {
     "batch_size": 128,
-    "epochs": 200000, 
+    "epochs": 10000, 
     "learning_rate": 0.001,
     "channel": 3, # RGB
     "num_L": 10,
-    "sigma_low": 0.1,
-    "sigma_high": 1.0,
+    "sigma_high": 10.0,
+    "sigma_low": 1.0,
     "T": 100,
     "epsilon": 2*1e-5
 }
@@ -47,7 +47,7 @@ x_test = x_test.astype('float32') / 255.
 train_dataset = tf.data.Dataset.from_tensor_slices((x_train)).shuffle(len(x_train), reshuffle_each_iteration=True).batch(PARAMS['batch_size'])
 #%%
 model = ncsn_models.build_refinenet(PARAMS, activation=tf.nn.elu)
-optimizer = tf.keras.optimizers.Adam(learning_rate=PARAMS['learning_rate'])
+optimizer = K.optimizers.Adam(learning_rate=PARAMS['learning_rate'])
 
 step = 0
 # geometric sequence of sigma
@@ -89,7 +89,6 @@ for _ in progress_bar:
                                     minval=0,
                                     maxval=PARAMS['num_L'],
                                     dtype=tf.dtypes.int32)
-    
     sigmas = tf.gather(sigma_levels, idx_sigmas)
     sigmas = tf.reshape(sigmas, shape=(x_batch.shape[0], 1, 1, 1))
     x_batch_perturbed = x_batch + tf.random.normal(shape=x_batch.shape) * sigmas # reparmetrization trick

@@ -20,13 +20,16 @@ from PIL import Image
 import matplotlib.pyplot as plt
 import os
 os.chdir('/Users/anseunghwan/Documents/GitHub/generative')
+
+from modules import ncsn_models
 #%%
 PARAMS = {
     "batch_size": 128,
     "epochs": 200000, 
     "learning_rate": 0.001,
+    "channel": 3, # RGB
     "num_L": 10,
-    "sigma_low": 0.01,
+    "sigma_low": 0.1,
     "sigma_high": 1.0,
     "T": 100,
     "epsilon": 2*1e-5
@@ -43,20 +46,7 @@ x_train = x_train.astype('float32') / 255.
 x_test = x_test.astype('float32') / 255.
 train_dataset = tf.data.Dataset.from_tensor_slices((x_train)).shuffle(len(x_train), reshuffle_each_iteration=True).batch(PARAMS['batch_size'])
 #%%
-'''scorenet (it will be fixed soon)'''
-class ScoreRefinedNet(K.Model):
-    def __init__(self):
-        super(ScoreRefinedNet, self).__init__()
-
-        self.conv1 = layers.Conv2D(filters=16, kernel_size=3, strides=1, padding='same', activation='elu')
-        self.conv2 = layers.Conv2D(filters=3, kernel_size=3, strides=1, padding='same', activation='sigmoid')
-
-    def call(self, inputs, **kwargs):
-        x = self.conv1(inputs)
-        x = self.conv2(x)
-        return x
-#%%
-model = ScoreRefinedNet()
+model = ncsn_models.build_refinenet(PARAMS, activation=tf.nn.elu)
 optimizer = tf.keras.optimizers.Adam(learning_rate=PARAMS['learning_rate'])
 
 step = 0

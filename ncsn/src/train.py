@@ -25,14 +25,14 @@ from modules import ncsn_models
 #%%
 PARAMS = {
     "batch_size": 128,
-    "epochs": 10000, 
-    "learning_rate": 0.001,
+    "epochs": 10000, # 200000
+    "learning_rate": 0.001, # 0.0001
     "channel": 3, # RGB
     "num_L": 10,
-    "sigma_high": 10.0,
+    "sigma_high": 10.0, # 50.0
     "sigma_low": 1.0,
-    "T": 100,
-    "epsilon": 2*1e-5
+    "T": 100, # 5
+    "epsilon": 2*1e-5 # 6.2*1e-6
 }
 #%%
 classnames = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
@@ -101,6 +101,9 @@ for _ in progress_bar:
     ))
 
     if step == PARAMS['epochs']: break
+#%%
+'''save weights of model'''
+model.save_weights('./assets/weights')
 #%%
 @tf.function
 def langevin_dynamics(scorenet, x, sigma_i=None, alpha=0.1, T=1000):

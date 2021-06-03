@@ -1,6 +1,7 @@
 '''
 Generative Modeling by Estimating Gradients of the Data Distribution
 with MNIST dataset
+Technique 3. Noise conditioning is used
 '''
 #%%
 import tensorflow as tf

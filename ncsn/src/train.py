@@ -34,6 +34,8 @@ PARAMS = {
     "T": 100, # 5
     "epsilon": 2*1e-5 # 6.2*1e-6
 }
+
+key = 'cifar10'
 #%%
 classnames = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
 classdict = {i:x for i,x in enumerate(classnames)}

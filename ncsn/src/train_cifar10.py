@@ -42,9 +42,9 @@ classdict = {i:x for i,x in enumerate(classnames)}
 #%%
 '''data'''
 (x_train, _), (_, _) = K.datasets.cifar10.load_data()
-PARAMS["data_dim"] = x_train.shape[1]
 '''0~1 scaling'''
 x_train = x_train.astype('float32') / 255.
+PARAMS["data_dim"] = x_train.shape[1]
 train_dataset = tf.data.Dataset.from_tensor_slices((x_train)).shuffle(len(x_train), reshuffle_each_iteration=True).batch(PARAMS['batch_size'])
 #%%
 model = ncsn_models.build_refinenet(PARAMS, activation=tf.nn.elu)

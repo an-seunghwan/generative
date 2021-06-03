@@ -1,6 +1,6 @@
 '''
 Generative Modeling by Estimating Gradients of the Data Distribution
-with CIFAR-10 dataset
+with MNIST dataset
 '''
 #%%
 import tensorflow as tf
@@ -39,7 +39,6 @@ key = 'mnist'
 #%%
 '''data'''
 (x_train, _), (_, _) = K.datasets.mnist.load_data()
-PARAMS["data_dim"] = x_train.shape[1]
 '''0~1 scaling'''
 x_train = x_train[..., tf.newaxis].astype('float32') / 255.
 paddings = [[0, 0],
@@ -47,6 +46,7 @@ paddings = [[0, 0],
             [4, 0],
             [0, 0]]
 x_train = tf.pad(x_train, paddings, "CONSTANT") # same with CIFAR-10 dataset image size
+PARAMS["data_dim"] = x_train.shape[1]
 train_dataset = tf.data.Dataset.from_tensor_slices((x_train)).shuffle(len(x_train), reshuffle_each_iteration=True).batch(PARAMS['batch_size'])
 #%%
 model = ncsn_models.build_refinenet(PARAMS, activation=tf.nn.elu)

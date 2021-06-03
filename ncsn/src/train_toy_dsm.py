@@ -26,7 +26,7 @@ PARAMS = {
     "learning_rate": 0.001,
     "num_L": 10,
     "sigma_low": 1.0,
-    "sigma_high": 20.0,
+    "sigma_high": 10.0,
     "epsilon": 0.1
 }
 
@@ -80,14 +80,14 @@ def dsm_loss(score, x_perturbed, x, sigmas):
     = \sigma^2 * Fisher information
     '''
     target = (x_perturbed - x) / (tf.square(sigmas))
-    loss = tf.square(sigmas) * 0.5 * tf.reduce_sum(tf.square(score + target), axis=[1,2,3], keepdims=True)
+    loss = tf.square(sigmas) * 0.5 * tf.reduce_sum(tf.square(score + target), axis=-1, keepdims=True)
     loss = tf.reduce_mean(loss)
     return loss
 
 @tf.function
 def train_one_step(model, optimizer, x_batch_perturbed, x_batch, idx_sigmas, sigmas):
     with tf.GradientTape() as tape:
-        # scores = model([x_batch_perturbed, idx_sigmas])
+        '''Technique 3. noise conditioning'''
         scores = model(x_batch_perturbed) / sigmas
         current_loss = dsm_loss(scores, x_batch_perturbed, x_batch, sigmas)
         gradients = tape.gradient(current_loss, model.trainable_variables)
@@ -117,7 +117,7 @@ for _ in progress_bar:
                                     dtype=tf.dtypes.int32)
     
     sigmas = tf.gather(sigma_levels, idx_sigmas)
-    sigmas = tf.reshape(sigmas, shape=(x_batch.shape[0], 1, 1, 1))
+    sigmas = tf.reshape(sigmas, shape=(x_batch.shape[0], 1))
     x_batch_perturbed = x_batch + tf.random.normal(shape=x_batch.shape) * sigmas # reparmetrization trick
 
     current_loss = train_one_step(model, optimizer, x_batch_perturbed, x_batch, idx_sigmas, sigmas)
@@ -198,7 +198,7 @@ plt.show()
 x_for_grads = np.linspace(-8, 8, num=20)
 grid = meshgrid(x_for_grads)
 true_grads = analytic_log_gmm_prob_grad(grid, 1) # compute analytic gradients
-estimated_grads = model(grid) # compute estimated gradients (scores)
+estimated_grads = model(grid) / PARAMS['sigma_low'] # compute estimated gradients (scores) given the smallest noise
 
 U1, V1 = true_grads[:, :, 1], true_grads[:, :, 0]
 U2, V2 = estimated_grads[:, :, 1], estimated_grads[:, :, 0]

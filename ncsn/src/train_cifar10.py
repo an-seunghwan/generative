@@ -41,11 +41,10 @@ classnames = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'h
 classdict = {i:x for i,x in enumerate(classnames)}
 #%%
 '''data'''
-(x_train, y_train), (x_test, y_test) = K.datasets.cifar10.load_data()
+(x_train, _), (_, _) = K.datasets.cifar10.load_data()
 PARAMS["data_dim"] = x_train.shape[1]
 '''0~1 scaling'''
 x_train = x_train.astype('float32') / 255.
-x_test = x_test.astype('float32') / 255.
 train_dataset = tf.data.Dataset.from_tensor_slices((x_train)).shuffle(len(x_train), reshuffle_each_iteration=True).batch(PARAMS['batch_size'])
 #%%
 model = ncsn_models.build_refinenet(PARAMS, activation=tf.nn.elu)
@@ -172,7 +171,7 @@ def save_as_grid(images, filename, spacing=2):
 '''1. generating (intermediate)'''
 B = 5
 intermediate_images = []
-x_init = tf.random.uniform(shape=(B, 32, 32, 3))
+x_init = tf.random.uniform(shape=(B, PARAMS["data_dim"], PARAMS["data_dim"], PARAMS['channel']))
 intermediate_images.append(x_init)
 intermediate_images += annealed_langevin_dynamics(model, x_init, sigma_levels, T=PARAMS['T'], eps=PARAMS['epsilon'], intermediate=True)
 images = tf.stack(intermediate_images)

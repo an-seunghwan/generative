@@ -43,7 +43,7 @@ class ResidualConvUnit(layers.Layer):
         
         self.conv = []
         for _ in range(self.n_block):
-            self.conv.append(layers.Conv2D(self.filters, self.kernel_size, 1, padding='same') )
+            self.conv.append(layers.Conv2D(self.filters, self.kernel_size, 1, padding='same'))
         
     def call(self, inputs, **kwargs):
         path = inputs

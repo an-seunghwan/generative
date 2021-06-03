@@ -17,8 +17,8 @@ class ResBlock(layers.Layer):
         self.kernel_size = kernel_size
         self.filters_before = filters_before
         self.filters = filters
-        self.down = down
-        self.dilation = dilation # only with strides = 1
+        self.down = down # subsampling 
+        self.dilation = dilation # works only with strides = 1
         
         self.norm1 = ncsn_layers.InstanceNormPlusPlus2D(self.params, self.filters_before)
         self.norm2 = ncsn_layers.InstanceNormPlusPlus2D(self.params, self.filters)        
@@ -68,7 +68,7 @@ class RefineBlock(layers.Layer):
         self.n_crp_stage = n_crp_stage
         
         self.RCUBlock_high = ncsn_layers.ResidualConvUnit(self.params, self.activation, self.filters_high, self.kernel_size, self.n_rcu_block)
-        if self.filters_low is not None:
+        if self.filters_low is not None: # first block in RefineNet
             self.RCUBlock_low = ncsn_layers.ResidualConvUnit(self.params, self.activation, self.filters_low, self.kernel_size, self.n_rcu_block)
         self.MRFBlock = ncsn_layers.MultiResolutionFusion(self.params, self.filters, self.kernel_size)
         self.CRPBlock = ncsn_layers.ChainedResidualPooling(self.n_crp_stage, self.params, self.activation, self.filters, self.kernel_size)
@@ -82,6 +82,7 @@ class RefineBlock(layers.Layer):
             high_x = self.RCUBlock_high(high_inputs)
             low_x = self.RCUBlock_low(low_inputs)
             x = self.MRFBlock(high_x, low_x)
+            
         x = self.CRPBlock(x)
         x = self.RCUBlock_end(x)
         

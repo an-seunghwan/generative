@@ -86,6 +86,7 @@ for _ in progress_bar:
     x_batch = next(iter(train_dataset))
     step += 1
     
+    # sampling sigma
     idx_sigmas = tf.random.uniform([x_batch.shape[0]], 
                                     minval=0,
                                     maxval=PARAMS['num_L'],

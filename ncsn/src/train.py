@@ -18,21 +18,21 @@ import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
 import os
-# os.chdir(r'D:/generative')
-os.chdir('/Users/anseunghwan/Documents/GitHub/generative')
+os.chdir(r'D:/generative')
+# os.chdir('/Users/anseunghwan/Documents/GitHub/generative')
 
 from modules import ncsn_models
 #%%
 PARAMS = {
     "batch_size": 128,
-    "epochs": 50000, # 200000
+    "epochs": 100000, # 200000
     "learning_rate": 0.0001, 
     "data": "cifar10", # or "mnist"
     "num_L": 200,
     "sigma_high": 50.0,
     "sigma_low": 1.0,
     "T": 5,
-    "epsilon": 2*1e-5
+    "epsilon": 5*1e-6
 }
 #%%
 if PARAMS['data'] == "cifar10":

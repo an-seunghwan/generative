@@ -26,10 +26,10 @@ from modules import ncsn_models
 #%%
 PARAMS = {
     "batch_size": 128,
-    "epochs": 20000, # 200000
+    "epochs": 50000, 
     "learning_rate": 0.001, 
     "channel": 1, # grayscale
-    "num_L": 100,
+    "num_L": 10,
     "sigma_high": 10.0,
     "sigma_low": 1.0,
     "T": 100,
@@ -109,6 +109,9 @@ for _ in progress_bar:
     if step == PARAMS['epochs']: break
 #%%
 model.save_weights('./ncsn/assets/weights')
+
+# model = ncsn_models.build_refinenet(PARAMS, activation=tf.nn.elu)
+# model.load_weights('./ncsn/assets/weights').expect_partial()
 #%%
 @tf.function
 def langevin_dynamics(scorenet, x, sigma_i=None, alpha=0.1, T=1000):
@@ -156,7 +159,7 @@ def save_as_grid(images, filename, spacing=2):
     # Init image
     grid_cols = rows * height + (rows + 1) * spacing
     grid_rows = cols * width + (cols + 1) * spacing
-    im = Image.new("grayscale", (grid_rows, grid_cols))
+    im = Image.new("L", (grid_rows, grid_cols))
     for row in range(rows):
         for col in range(cols):
             x = col * height + (1 + col) * spacing

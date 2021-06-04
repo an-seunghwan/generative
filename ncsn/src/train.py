@@ -26,12 +26,12 @@ from modules import ncsn_models
 PARAMS = {
     "batch_size": 128,
     "epochs": 50000, # 200000
-    "learning_rate": 0.001, 
-    "data": "mnist", # or "mnist"
-    "num_L": 100,
-    "sigma_high": 10.0,
+    "learning_rate": 0.0001, 
+    "data": "cifar10", # or "mnist"
+    "num_L": 200,
+    "sigma_high": 50.0,
     "sigma_low": 1.0,
-    "T": 100,
+    "T": 5,
     "epsilon": 2*1e-5
 }
 #%%

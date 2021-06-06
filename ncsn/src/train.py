@@ -18,7 +18,7 @@ import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
 import os
-os.chdir(r'D:/generative')
+os.chdir(r'D:/generative/ncsn')
 # os.chdir('/Users/anseunghwan/Documents/GitHub/generative')
 
 from modules import ncsn_models
@@ -26,13 +26,13 @@ from modules import ncsn_models
 PARAMS = {
     "batch_size": 128,
     "epochs": 100000, # 200000
-    "learning_rate": 0.0001, 
+    "learning_rate": 0.0002, 
     "data": "cifar10", # or "mnist"
-    "num_L": 200,
-    "sigma_high": 50.0,
-    "sigma_low": 1.0,
-    "T": 5,
-    "epsilon": 5*1e-6
+    "num_L": 10,
+    "sigma_high": 1.0,
+    "sigma_low": 0.1,
+    "T": 100,
+    "epsilon": 5*1e-5
 }
 #%%
 if PARAMS['data'] == "cifar10":
@@ -125,7 +125,7 @@ for _ in progress_bar:
 
     if step == PARAMS['epochs']: break
 #%%
-model.save_weights('./ncsn/assets/{}/weights'.format(PARAMS['data']))
+model.save_weights('./assets/{}/weights'.format(PARAMS['data']))
 #%%
 @tf.function
 def langevin_dynamics(scorenet, x, sigma_i=None, alpha=0.1, T=1000):
@@ -181,7 +181,7 @@ def save_as_grid(images, filename, spacing=2):
             im.paste(tf.keras.preprocessing.image.array_to_img(images[col, row]), (x, y))
     plt.axis('off')
     plt.imshow(im)
-    plt.savefig('./ncsn/assets/{}.png'.format(filename), bbox_inches="tight")
+    plt.savefig('./assets/{}.png'.format(filename), bbox_inches="tight")
 #%%
 '''evaluation
 1. generating (intermediate)

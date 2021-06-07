@@ -26,11 +26,11 @@ from modules import ncsn_models
 PARAMS = {
     "batch_size": 128,
     "epochs": 100000, # 200000
-    "learning_rate": 0.0002, 
+    "learning_rate": 0.005, 
     "data": "cifar10", # or "mnist"
     "num_L": 10,
     "sigma_high": 1.0,
-    "sigma_low": 0.1,
+    "sigma_low": 0.01,
     "T": 100,
     "epsilon": 5*1e-5
 }
@@ -126,6 +126,9 @@ for _ in progress_bar:
     if step == PARAMS['epochs']: break
 #%%
 model.save_weights('./assets/{}/weights'.format(PARAMS['data']))
+
+# imported = ncsn_models.build_refinenet(PARAMS, activation=tf.nn.elu)
+# imported.load_weights('./assets/{}/weights'.format(PARAMS['data']))
 #%%
 @tf.function
 def langevin_dynamics(scorenet, x, sigma_i=None, alpha=0.1, T=1000):
@@ -189,7 +192,7 @@ def save_as_grid(images, filename, spacing=2):
 '''
 
 '''1. generating (intermediate)'''
-B = 5
+B = 10
 intermediate_images = []
 x_init = tf.random.uniform(shape=(B, PARAMS["data_dim"], PARAMS["data_dim"], PARAMS['channel']))
 intermediate_images.append(x_init)

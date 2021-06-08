@@ -18,15 +18,15 @@ import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
 import os
-os.chdir(r'D:/generative/ncsn')
-# os.chdir('/Users/anseunghwan/Documents/GitHub/generative')
+# os.chdir(r'D:/generative/ncsn')
+os.chdir('/Users/anseunghwan/Documents/GitHub/generative')
 
 from modules import ncsn_models
 #%%
 PARAMS = {
     "batch_size": 128,
     "epochs": 100000, # 200000
-    "learning_rate": 0.005, 
+    "learning_rate": 0.001, 
     "data": "cifar10", # or "mnist"
     "num_L": 10,
     "sigma_high": 1.0,
@@ -67,7 +67,8 @@ else:
     print('Invalid data type!')
     assert 0 == 1
 #%%
-model = ncsn_models.build_refinenet(PARAMS, activation=tf.nn.elu)
+# model = ncsn_models.build_refinenet(PARAMS, activation=tf.nn.elu)
+model = ncsn_models.build_unet(PARAMS)
 optimizer = K.optimizers.Adam(learning_rate=PARAMS['learning_rate'])
 
 step = 0

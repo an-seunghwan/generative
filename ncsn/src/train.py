@@ -126,7 +126,13 @@ for _ in progress_bar:
 
     if step == PARAMS['epochs']: break
 #%%
-model.save_weights('./assets/{}/weights'.format(PARAMS['data']))
+model.save_weights('./assets/{}/weights_{}_{}_{}_{}_{}_{}'.format(PARAMS['data'], 
+                                                                PARAMS['learning_rate'], 
+                                                                PARAMS['num_L'],
+                                                                PARAMS['sigma_high'],
+                                                                PARAMS['sigma_low'],
+                                                                PARAMS['T'],
+                                                                PARAMS['epsilon'],))
 
 # imported = ncsn_models.build_refinenet(PARAMS, activation=tf.nn.elu)
 # imported.load_weights('./assets/{}/weights'.format(PARAMS['data']))
@@ -199,7 +205,13 @@ x_init = tf.random.uniform(shape=(B, PARAMS["data_dim"], PARAMS["data_dim"], PAR
 intermediate_images.append(x_init)
 intermediate_images += annealed_langevin_dynamics(model, x_init, sigma_levels, T=PARAMS['T'], eps=PARAMS['epsilon'], intermediate=True)
 images = tf.stack(intermediate_images)
-save_as_grid(images, '{}_intermediate'.format(PARAMS['data']))
+save_as_grid(images, '{}_intermediate_{}_{}_{}_{}_{}_{}'.format(PARAMS['data'], 
+                                                                PARAMS['learning_rate'], 
+                                                                PARAMS['num_L'],
+                                                                PARAMS['sigma_high'],
+                                                                PARAMS['sigma_low'],
+                                                                PARAMS['T'],
+                                                                PARAMS['epsilon'],))
 #%%
 '''2. the nearest neighborhood (l2 dist)'''
 #%%

@@ -18,7 +18,8 @@ from tqdm import tqdm
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-os.chdir('/Users/anseunghwan/Documents/GitHub/generative')
+os.chdir(r'D:/generative')
+# os.chdir('/Users/anseunghwan/Documents/GitHub/generative')
 #%%
 PARAMS = {
     "batch_size": 128,
@@ -132,7 +133,13 @@ for _ in progress_bar:
 fig, ax = plt.subplots(figsize=(9, 4))
 ax.plot(loss_history)
 ax.set_title('loss')
-plt.savefig('./ncsn/assets/loss_{}.png'.format(key), bbox_inches="tight")
+plt.savefig('./ncsn/assets/loss_{}_{}_{}_{}_{}_{}_{}'.format(key, 
+                                                            PARAMS['learning_rate'], 
+                                                            PARAMS['num_L'],
+                                                            PARAMS['sigma_high'],
+                                                            PARAMS['sigma_low'],
+                                                            PARAMS['T'],
+                                                            PARAMS['epsilon'],))
 plt.show()
 #%%
 @tf.function
@@ -191,7 +198,14 @@ axes.flatten()[0].set_ylabel(r'$y$')
 axes.flatten()[0].set_title('ground truth density')
 axes.flatten()[1].scatter(samples.numpy()[:, 0], samples.numpy()[:, 1], s=7, alpha=0.3, color='black')
 axes.flatten()[1].set_title('annealed Langevin dynamics samples')
-plt.savefig('./ncsn/assets/samples_{}.png'.format(key), bbox_inches="tight")
+plt.savefig('./ncsn/assets/samples_{}_{}_{}_{}_{}_{}_{}'.format(key, 
+                                                            PARAMS['learning_rate'], 
+                                                            PARAMS['num_L'],
+                                                            PARAMS['sigma_high'],
+                                                            PARAMS['sigma_low'],
+                                                            PARAMS['T'],
+                                                            PARAMS['epsilon'],)
+            , bbox_inches="tight")
 plt.show()
 #%%
 '''true score vs estimated score'''
@@ -213,6 +227,13 @@ axes.flatten()[1].set_xlabel(r'$x$')
 axes.flatten()[1].set_ylabel(r'$y$')
 axes.flatten()[1].set_title('estimated scores')
 plt.gca().set_aspect('equal', adjustable='box')
-plt.savefig('./ncsn/assets/scores_{}.png'.format(key), bbox_inches="tight")
+plt.savefig('./ncsn/assets/scores_{}_{}_{}_{}_{}_{}_{}'.format(key, 
+                                                            PARAMS['learning_rate'], 
+                                                            PARAMS['num_L'],
+                                                            PARAMS['sigma_high'],
+                                                            PARAMS['sigma_low'],
+                                                            PARAMS['T'],
+                                                            PARAMS['epsilon'],)
+            , bbox_inches="tight")
 plt.show()
 #%%

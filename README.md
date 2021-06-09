@@ -8,5 +8,5 @@ Implementation codes are written with reference to the following github reposito
 - https://github.com/ermongroup/ncsn
 - https://github.com/Xemnas0/NCSN-TF2.0
 
-## 2. Score-Based Generative Modeling Through Stochastic Differential equations
-- https://openreview.net/forum?id=PxTIG12RRHS
+## 2. Gaussian Process Prior Variational Autoencoders
+- https://github.com/ratschlab/SVGP-VAE

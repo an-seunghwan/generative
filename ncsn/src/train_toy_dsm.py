@@ -25,9 +25,10 @@ PARAMS = {
     "batch_size": 128,
     "epochs": 10000, 
     "learning_rate": 0.001,
-    "num_L": 10,
+    "num_L": 100,
     "sigma_low": 1.0,
-    "sigma_high": 10.0,
+    "sigma_high": 20.0,
+    "T": 100,
     "epsilon": 0.1
 }
 
@@ -133,7 +134,7 @@ for _ in progress_bar:
 fig, ax = plt.subplots(figsize=(9, 4))
 ax.plot(loss_history)
 ax.set_title('loss')
-plt.savefig('./ncsn/assets/loss_{}_{}_{}_{}_{}_{}_{}'.format(key, 
+plt.savefig('./ncsn/assets/loss_{}_{}_{}_{}_{}_{}_{}.png'.format(key, 
                                                             PARAMS['learning_rate'], 
                                                             PARAMS['num_L'],
                                                             PARAMS['sigma_high'],
@@ -198,7 +199,7 @@ axes.flatten()[0].set_ylabel(r'$y$')
 axes.flatten()[0].set_title('ground truth density')
 axes.flatten()[1].scatter(samples.numpy()[:, 0], samples.numpy()[:, 1], s=7, alpha=0.3, color='black')
 axes.flatten()[1].set_title('annealed Langevin dynamics samples')
-plt.savefig('./ncsn/assets/samples_{}_{}_{}_{}_{}_{}_{}'.format(key, 
+plt.savefig('./ncsn/assets/samples_{}_{}_{}_{}_{}_{}_{}.png'.format(key, 
                                                             PARAMS['learning_rate'], 
                                                             PARAMS['num_L'],
                                                             PARAMS['sigma_high'],
@@ -227,7 +228,7 @@ axes.flatten()[1].set_xlabel(r'$x$')
 axes.flatten()[1].set_ylabel(r'$y$')
 axes.flatten()[1].set_title('estimated scores')
 plt.gca().set_aspect('equal', adjustable='box')
-plt.savefig('./ncsn/assets/scores_{}_{}_{}_{}_{}_{}_{}'.format(key, 
+plt.savefig('./ncsn/assets/scores_{}_{}_{}_{}_{}_{}_{}.png'.format(key, 
                                                             PARAMS['learning_rate'], 
                                                             PARAMS['num_L'],
                                                             PARAMS['sigma_high'],

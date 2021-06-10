@@ -17,8 +17,8 @@ from tqdm import tqdm
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-# os.chdir(r'D:/generative/ncsn')
-os.chdir('/Users/anseunghwan/Documents/GitHub/generative/ncsn')
+os.chdir(r'D:/generative/ncsn')
+# os.chdir('/Users/anseunghwan/Documents/GitHub/generative/ncsn')
 #%%
 PARAMS = {
     # "batch_size": 128,
@@ -27,11 +27,11 @@ PARAMS = {
     # "num_L": 100,
     # "sigma_low": 1.0,
     # "sigma_high": 20.0,
-    "T": 1000,
+    "T": 100,
     # "epsilon": 0.1,
-    "num_epsilon": 19,
+    "num_epsilon": 8,
     "epsilon_low": 0.01, 
-    "epsilon_high": 10.0,
+    "epsilon_high": 1.0,
 }
 
 key = 'langevin' 
@@ -86,7 +86,7 @@ def analytic_log_gmm_prob_grad(x):
 
 @tf.function
 def langevin_dynamics(grad_function, x, epsilon=None, T=1000):
-    for _ in tqdm(range(T), desc='Langevin dynamics'):
+    for _ in range(T):
         score = grad_function(x)
         noise = tf.random.normal(shape=x.get_shape(), mean=0, stddev=1)
         x = x + (epsilon / 2) * score + tf.sqrt(epsilon) * noise
@@ -102,7 +102,7 @@ def meshgrid(x):
 '''plot density and generated samples'''
 x_init = tf.random.uniform(shape=(1280, 2), minval=-8, maxval=8)
 
-fig, axes = plt.subplots(5, int((PARAMS['num_epsilon'] + 1) / 5), figsize=(15, 15))
+fig, axes = plt.subplots(3, int((PARAMS['num_epsilon'] + 1) / 3), figsize=(20, 20))
 x = np.linspace(-8, 8, 500, dtype=np.float32)
 axes.flatten()[0].imshow(gmm.prob(meshgrid(x)), cmap='inferno', extent=[-8, 8, -8, 8], origin='lower')
 axes.flatten()[0].set_xlabel(r'$x$')
@@ -110,17 +110,11 @@ axes.flatten()[0].set_ylabel(r'$y$')
 axes.flatten()[0].set_title('ground truth density')
 
 for i in range(PARAMS['num_epsilon']):
-    samples = langevin_dynamics(analytic_log_gmm_prob_grad, x_init, epsilon_levels[i], T=PARAMS['T'])
+    print('Langevin dymanics (epsilon = {})'.format(epsilon_levels[i]))
+    samples = langevin_dynamics(analytic_log_gmm_prob_grad, x_init, epsilon_levels[i], PARAMS['T'])
     axes.flatten()[i+1].scatter(samples.numpy()[:, 0], samples.numpy()[:, 1], s=7, alpha=0.3, color='black')
-    axes.flatten()[i+1].set_title('$\epsilon$ = {}'.format(epsilon_levels.numpy()[i]))
-# plt.savefig('./ncsn/assets/samples_{}_{}_{}_{}_{}_{}_{}.png'.format(key, 
-#                                                             PARAMS['learning_rate'], 
-#                                                             PARAMS['num_L'],
-#                                                             PARAMS['sigma_high'],
-#                                                             PARAMS['sigma_low'],
-#                                                             PARAMS['T'],
-#                                                             PARAMS['epsilon'],)
-#             , bbox_inches="tight")
+    axes.flatten()[i+1].set_title('$\epsilon$ = {}'.format(epsilon_levels[i]))
+plt.savefig('./assets/langevin.png', bbox_inches="tight")
 plt.show()
 plt.close()
 #%%

@@ -17,8 +17,8 @@ from tqdm import tqdm
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-os.chdir(r'D:/generative/ncsn')
-# os.chdir('/Users/anseunghwan/Documents/GitHub/generative/ncsn')
+# os.chdir(r'D:/generative/ncsn')
+os.chdir('/Users/anseunghwan/Documents/GitHub/generative/ncsn')
 #%%
 PARAMS = {
     # "batch_size": 128,
@@ -28,10 +28,10 @@ PARAMS = {
     # "sigma_low": 1.0,
     # "sigma_high": 20.0,
     "T": 100,
-    # "epsilon": 0.1,
-    "num_epsilon": 8,
-    "epsilon_low": 0.01, 
-    "epsilon_high": 1.0,
+    "epsilon": 0.01,
+    # "num_epsilon": 8,
+    # "epsilon_low": 0.01, 
+    # "epsilon_high": 1.0,
 }
 
 key = 'langevin' 
@@ -40,54 +40,57 @@ key = 'langevin'
 import tensorflow_probability as tfp
 tfd = tfp.distributions
 
-def gmm(probs, loc, scale):
-    gmm = tfd.MixtureSameFamily(
-        mixture_distribution=tfd.Categorical(probs=probs),
-        components_distribution=tfd.MultivariateNormalDiag(
-            loc=loc,
-            scale_identity_multiplier=scale))
-    return gmm
-
-def sample(gmm, sample_shape):
-    s = tfd.Sample(gmm, sample_shape=sample_shape)
+def build_gaussian(loc, scale):
+    return tfp.distributions.MultivariateNormalFullCovariance(
+                loc=loc, covariance_matrix=scale
+            )
+    
+def sample(gaussian, sample_shape):
+    s = tfd.Sample(gaussian, sample_shape=sample_shape)
     return s.sample()
+#%%
+# # geometric sequence of epsilon
+# epsilon_levels = tf.math.exp(tf.linspace(tf.math.log(PARAMS['epsilon_high']),
+#                                         tf.math.log(PARAMS['epsilon_low']),
+#                                         PARAMS['num_epsilon']))
+#%%
+# @tf.function
+# def analytic_log_gmm_prob_grad(x):
+#     '''
+#     ground truth gradient data score of gmm
+#     d/dx log gmm 
+#     = d/dx log (\pi_1 normal1 + \pi_2 normal2)
+#     = d/dx log exp (log \pi_1 + log normal1 + log \pi_2 + log normal2), where exp is element-wise
+#     '''
+#     x_tensor = tf.convert_to_tensor(x)
+#     with tf.GradientTape() as tape:
+#         tape.watch(x_tensor)
+#         normal1 = tfd.MultivariateNormalDiag(loc=mean_parameters[0],
+#                                             scale_diag=[variance_parameters])
+#         normal2 = tfd.MultivariateNormalDiag(loc=mean_parameters[1],
+#                                             scale_diag=[variance_parameters])
+#         probs = list()
+#         probs.append(tf.math.log(tf.convert_to_tensor(0.2)) + normal1.log_prob(x_tensor)) # log \pi_1 + log normal1
+#         probs.append(tf.math.log(tf.convert_to_tensor(0.8)) + normal2.log_prob(x_tensor)) # log \pi_2 + log normal2
+#         log_prob = tf.reduce_logsumexp(tf.stack(probs, axis=0), axis=0)
+#     true_gradients = tape.gradient(log_prob, x_tensor)
+#     return true_gradients
 
-mixture_prob = [0.2, 0.8]
-mean_parameters = [[-5, -5], [5, 5]]
-variance_parameters = [1, 1]
-gmm = gmm(mixture_prob, mean_parameters, variance_parameters)
-#%%
-# geometric sequence of epsilon
-epsilon_levels = tf.math.exp(tf.linspace(tf.math.log(PARAMS['epsilon_high']),
-                                        tf.math.log(PARAMS['epsilon_low']),
-                                        PARAMS['num_epsilon']))
-#%%
 @tf.function
-def analytic_log_gmm_prob_grad(x):
-    '''
-    ground truth gradient data score of gmm
-    d/dx log gmm 
-    = d/dx log (\pi_1 normal1 + \pi_2 normal2)
-    = d/dx log exp (log \pi_1 + log normal1 + log \pi_2 + log normal2), where exp is element-wise
-    '''
-    x_tensor = tf.convert_to_tensor(x)
+def analytic_log_gaussian_prob_grad(x, mean_parameters, variance_parameters):
+    x_tensor = tf.cast(x, tf.float64)
     with tf.GradientTape() as tape:
         tape.watch(x_tensor)
-        normal1 = tfd.MultivariateNormalDiag(loc=mean_parameters[0],
-                                            scale_diag=[variance_parameters])
-        normal2 = tfd.MultivariateNormalDiag(loc=mean_parameters[1],
-                                            scale_diag=[variance_parameters])
-        probs = list()
-        probs.append(tf.math.log(tf.convert_to_tensor(0.2)) + normal1.log_prob(x_tensor)) # log \pi_1 + log normal1
-        probs.append(tf.math.log(tf.convert_to_tensor(0.8)) + normal2.log_prob(x_tensor)) # log \pi_2 + log normal2
-        log_prob = tf.reduce_logsumexp(tf.stack(probs, axis=0), axis=0)
-    true_gradients = tape.gradient(log_prob, x_tensor)
-    return true_gradients
+        normal = tfd.MultivariateNormalFullCovariance(loc=mean_parameters,
+                                                    covariance_matrix=variance_parameters)
+        log_probs = normal.log_prob(x_tensor)
+    true_gradients = tape.gradient(log_probs, x_tensor)
+    return tf.cast(true_gradients, tf.float32)
 
 @tf.function
-def langevin_dynamics(grad_function, x, epsilon=None, T=1000):
+def langevin_dynamics(grad_function, mean_parameters, variance_parameters, x, epsilon=None, T=1000):
     for _ in range(T):
-        score = grad_function(x)
+        score = grad_function(x, mean_parameters, variance_parameters)
         noise = tf.random.normal(shape=x.get_shape(), mean=0, stddev=1)
         x = x + (epsilon / 2) * score + tf.sqrt(epsilon) * noise
     return x
@@ -95,26 +98,65 @@ def langevin_dynamics(grad_function, x, epsilon=None, T=1000):
 def meshgrid(x):
     y = x
     [gx, gy] = np.meshgrid(x, y, indexing='ij')
-    gx, gy = np.float32(gx), np.float32(gy)
+    gx, gy = np.float64(gx), np.float64(gy)
     grid = np.concatenate([gx.ravel()[None, :], gy.ravel()[None, :]], axis=0)
     return grid.T.reshape(x.size, y.size, 2)
 #%%
 '''plot density and generated samples'''
-x_init = tf.random.uniform(shape=(1280, 2), minval=-8, maxval=8)
+x_init = tf.random.uniform(shape=(2560, 2), minval=-8, maxval=8)
 
-fig, axes = plt.subplots(3, int((PARAMS['num_epsilon'] + 1) / 3), figsize=(20, 20))
+rhos = np.linspace(0.91, 0.99, 9)
+fig, axes = plt.subplots(3, int(len(rhos) / 3), figsize=(20, 20))
 x = np.linspace(-8, 8, 500, dtype=np.float32)
-axes.flatten()[0].imshow(gmm.prob(meshgrid(x)), cmap='inferno', extent=[-8, 8, -8, 8], origin='lower')
-axes.flatten()[0].set_xlabel(r'$x$')
-axes.flatten()[0].set_ylabel(r'$y$')
-axes.flatten()[0].set_title('ground truth density')
-
-for i in range(PARAMS['num_epsilon']):
-    print('Langevin dymanics (epsilon = {})'.format(epsilon_levels[i]))
-    samples = langevin_dynamics(analytic_log_gmm_prob_grad, x_init, epsilon_levels[i], PARAMS['T'])
-    axes.flatten()[i+1].scatter(samples.numpy()[:, 0], samples.numpy()[:, 1], s=7, alpha=0.3, color='black')
-    axes.flatten()[i+1].set_title('$\epsilon$ = {}'.format(epsilon_levels[i]))
+for i in range(len(rhos)):
+    rho = rhos[i]
+    mean_parameters = [0, 0]
+    variance_parameters = [[1, rho],
+                           [rho, 1]]
+    print('Langevin dymanics (rho = {})'.format(rho))
+    samples = langevin_dynamics(analytic_log_gaussian_prob_grad, mean_parameters, variance_parameters, x_init, PARAMS['epsilon'], PARAMS['T'])
+    axes.flatten()[i].scatter(samples.numpy()[:, 0], samples.numpy()[:, 1], s=7, alpha=0.2, color='black')
+    axes.flatten()[i].set_title('rho = {}'.format(rho))
 plt.savefig('./assets/langevin.png', bbox_inches="tight")
 plt.show()
 plt.close()
+#%%
+mean_parameters = [0, 0]
+variance_parameters = [[1, 0.99],
+                        [0.99, 1]]
+# sample_ = np.random.multivariate_normal(mean_parameters, variance_parameters, size=(2560, ))
+gaussian = build_gaussian(mean_parameters, variance_parameters)
+sample_ = sample(gaussian, 2560)
+plt.figure(figsize=(7, 7))
+plt.scatter(sample_[:, 0], sample_[:, 1], s=7, alpha=0.2, color='black')
+#%%
+'''true score vs estimated score'''
+x_for_grads = np.linspace(-8, 8, num=20)
+grid = meshgrid(x_for_grads)
+mean_parameters = [0, 0]
+variance_parameters = [[1, 0.9],
+                        [0.9, 1]]
+@tf.function
+def analytic_log_gaussian_prob_grad2(x, mean_parameters, variance_parameters):
+    x_tensor = tf.cast(x, tf.float32)
+    with tf.GradientTape() as tape:
+        tape.watch(x_tensor)
+        normal = tfd.MultivariateNormalFullCovariance(loc=mean_parameters,
+                                                    covariance_matrix=variance_parameters)
+        log_probs = normal.log_prob(x_tensor)
+    true_gradients = tape.gradient(log_probs, x_tensor)
+    return tf.cast(true_gradients, tf.float32)
+
+true_grads = analytic_log_gaussian_prob_grad2(grid, mean_parameters, variance_parameters) # compute analytic gradients
+
+U1, V1 = true_grads[:, :, 1], true_grads[:, :, 0]
+
+fig, axes = plt.subplots(1, 1, figsize=(6, 6))
+axes.quiver(x_for_grads, x_for_grads, U1, V1)
+axes.set_xlabel(r'$x$')
+axes.set_ylabel(r'$y$')
+axes.set_title('data scores (rho=0.9)')
+plt.gca().set_aspect('equal', adjustable='box')
+plt.savefig('./assets/analytic_score.png', bbox_inches="tight")
+plt.show()
 #%%

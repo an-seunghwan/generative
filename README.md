@@ -8,5 +8,5 @@ Implementation codes are written with reference to the following github reposito
 - https://github.com/ermongroup/ncsn
 - https://github.com/Xemnas0/NCSN-TF2.0
 
-## 2. Gaussian Process Prior Variational Autoencoders
-- https://github.com/ratschlab/SVGP-VAE
+<!-- ## 2. Gaussian Process Prior Variational Autoencoders
+- https://github.com/ratschlab/SVGP-VAE -->

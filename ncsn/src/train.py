@@ -18,8 +18,8 @@ import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
 import os
-os.chdir(r'D:/generative/ncsn')
-# os.chdir('/Users/anseunghwan/Documents/GitHub/generative')
+# os.chdir(r'D:/generative/ncsn')
+os.chdir('/Users/anseunghwan/Documents/GitHub/generative')
 
 from modules import ncsn_models
 #%%

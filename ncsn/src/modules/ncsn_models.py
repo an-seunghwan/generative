@@ -146,59 +146,51 @@ def build_unet(PARAMS):
 
     '''contracting path'''
     inputs = layers.Input(input_size)
-    conv1 = layers.Conv2D(filters = 64, kernel_size = 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(inputs)
-    conv1 = layers.Conv2D(64, 3, activation = 'elu', padding = 'same', kernel_initializer = 'he_normal')(conv1) # 256x256x64
-    pool1 = layers.MaxPooling2D(pool_size=(2, 2))(conv1) # 128x128x64
+    conv1 = layers.Conv2D(filters = 128, kernel_size = 3, activation = 'elu', padding = 'same')(inputs)
+    norm1 = ncsn_layers.InstanceNormPlusPlus2D(PARAMS, 128)(conv1)
+    conv1 = layers.Conv2D(128, 3, strides=2, activation = 'elu', padding = 'same')(norm1) 
 
-    conv2 = layers.Conv2D(128, 3, activation = 'elu', padding = 'same', kernel_initializer = 'he_normal')(pool1)
-    conv2 = layers.Conv2D(128, 3, activation = 'elu', padding = 'same', kernel_initializer = 'he_normal')(conv2) # 128x128x128
-    pool2 = layers.MaxPooling2D(pool_size=(2, 2))(conv2) # 64x64x128
+    conv2 = layers.Conv2D(128, 3, activation = 'elu', padding = 'same')(conv1)
+    norm2 = ncsn_layers.InstanceNormPlusPlus2D(PARAMS, 128)(conv2)
+    conv2 = layers.Conv2D(128, 3, 2, activation = 'elu', padding = 'same')(norm2) 
 
-    conv3 = layers.Conv2D(256, 3, activation = 'elu', padding = 'same', kernel_initializer = 'he_normal')(pool2)
-    conv3 = layers.Conv2D(256, 3, activation = 'elu', padding = 'same', kernel_initializer = 'he_normal')(conv3) # 64x64x256
-    pool3 = layers.MaxPooling2D(pool_size=(2, 2))(conv3) # 32x32x256
+    conv3 = layers.Conv2D(256, 3, activation = 'elu', padding = 'same')(conv2)
+    norm3 = ncsn_layers.InstanceNormPlusPlus2D(PARAMS, 256)(conv3)
+    conv3 = layers.Conv2D(256, 3, 2, activation = 'elu', padding = 'same')(norm3)
 
-    conv4 = layers.Conv2D(512, 3, activation = 'elu', padding = 'same', kernel_initializer = 'he_normal')(pool3)
-    conv4 = layers.Conv2D(512, 3, activation = 'elu', padding = 'same', kernel_initializer = 'he_normal')(conv4) # 32x32x512
-    drop4 = layers.Dropout(0.5)(conv4) # 32x32x512, implicit augmentation
-    pool4 = layers.MaxPooling2D(pool_size=(2, 2))(drop4) # 16x16x512
-
-    '''bottle-neck'''
-    conv5 = layers.Conv2D(1024, 3, activation = 'elu', padding = 'same', kernel_initializer = 'he_normal')(pool4)
-    conv5 = layers.Conv2D(1024, 3, activation = 'elu', padding = 'same', kernel_initializer = 'he_normal')(conv5)
-    drop5 = layers.Dropout(0.5)(conv5) # 16x16x1024, implicit augmentation
+    conv4 = layers.Conv2D(256, 3, activation = 'elu', padding = 'same')(conv3)
+    norm4 = ncsn_layers.InstanceNormPlusPlus2D(PARAMS, 256)(conv4)
+    conv4 = layers.Conv2D(256, 3, 2, activation = 'elu', padding = 'same')(norm4) 
 
     '''expanding path'''
-    updrop5 = layers.UpSampling2D(size = (2, 2))(drop5) # 32x32x1024
-    up6 = layers.Conv2D(512, 2, activation = 'elu', padding = 'same', kernel_initializer = 'he_normal')(updrop5) # 32x32x512
-    merge6 = layers.concatenate([drop4, up6], axis = 3) # skip connection
-    conv6 = layers.Conv2D(512, 3, activation = 'elu', padding = 'same', kernel_initializer = 'he_normal')(merge6)
-    conv6 = layers.Conv2D(512, 3, activation = 'elu', padding = 'same', kernel_initializer = 'he_normal')(conv6)
+    upconv4 = layers.UpSampling2D(size = (2, 2))(conv4) 
+    conv5 = layers.Conv2D(256, 3, activation = 'elu', padding = 'same')(upconv4)
+    conv5 = layers.concatenate([conv5, conv3], axis = 3)
+    conv5 = layers.Conv2D(256, 3, activation = 'elu', padding = 'same')(conv5)
+    conv5 = layers.Conv2D(256, 3, activation = 'elu', padding = 'same')(conv5)
 
-    upconv6 = layers.UpSampling2D(size = (2, 2))(conv6) # 64x64x512
-    up7 = layers.Conv2D(256, 2, activation = 'elu', padding = 'same', kernel_initializer = 'he_normal')(upconv6) #64x64x256
-    merge7 = layers.concatenate([conv3, up7], axis = 3)
-    conv7 = layers.Conv2D(256, 3, activation = 'elu', padding = 'same', kernel_initializer = 'he_normal')(merge7)
-    conv7 = layers.Conv2D(256, 3, activation = 'elu', padding = 'same', kernel_initializer = 'he_normal')(conv7)
+    upconv5 = layers.UpSampling2D(size = (2, 2))(conv5) 
+    conv6 = layers.Conv2D(128, 3, activation = 'elu', padding = 'same')(upconv5) 
+    conv6 = layers.concatenate([conv6, conv2], axis = 3)
+    conv6 = layers.Conv2D(128, 3, activation = 'elu', padding = 'same')(conv6)
+    conv6 = layers.Conv2D(128, 3, activation = 'elu', padding = 'same')(conv6)
 
-    upconv7 = layers.UpSampling2D(size = (2, 2))(conv7) # 128x128x256
-    up8 = layers.Conv2D(128, 2, activation = 'elu', padding = 'same', kernel_initializer = 'he_normal')(upconv7) # 128x128x128
-    merge8 = layers.concatenate([conv2, up8], axis = 3)
-    conv8 = layers.Conv2D(128, 3, activation = 'elu', padding = 'same', kernel_initializer = 'he_normal')(merge8)
-    conv8 = layers.Conv2D(128, 3, activation = 'elu', padding = 'same', kernel_initializer = 'he_normal')(conv8)
-
-    upconv8 = layers.UpSampling2D(size = (2, 2))(conv8) # 256x256x128
-    up9 = layers.Conv2D(64, 2, activation = 'elu', padding = 'same', kernel_initializer = 'he_normal')(upconv8) # 256x256x64
-    merge9 = layers.concatenate([conv1, up9], axis = 3)
-    conv9 = layers.Conv2D(64, 3, activation = 'elu', padding = 'same', kernel_initializer = 'he_normal')(merge9)
-    conv9 = layers.Conv2D(64, 3, activation = 'elu', padding = 'same', kernel_initializer = 'he_normal')(conv9)
-    conv9 = layers.Conv2D(32, 3, activation = 'elu', padding = 'same', kernel_initializer = 'he_normal')(conv9)
-    conv9 = layers.Conv2D(16, 3, activation = 'elu', padding = 'same', kernel_initializer = 'he_normal')(conv9) # 256x256x2, final feature map
+    upconv6 = layers.UpSampling2D(size = (2, 2))(conv6) 
+    conv7 = layers.Conv2D(64, 3, activation = 'elu', padding = 'same')(upconv6) 
+    conv7 = layers.concatenate([conv7, conv1], axis = 3)
+    conv7 = layers.Conv2D(64, 3, activation = 'elu', padding = 'same')(conv7)
+    conv7 = layers.Conv2D(64, 3, activation = 'elu', padding = 'same')(conv7)
+    
+    upconv7 = layers.UpSampling2D(size = (2, 2))(conv7) 
+    conv8 = layers.Conv2D(32, 3, activation = 'elu', padding = 'same')(upconv7)
+    conv8 = layers.concatenate([conv8, inputs], axis = 3)
+    conv8 = layers.Conv2D(32, 3, activation = 'elu', padding = 'same')(conv8) 
+    conv8 = layers.Conv2D(32, 3, activation = 'elu', padding = 'same')(conv8) 
 
     '''output layer'''
-    conv10 = layers.Conv2D(PARAMS['channel'], 1)(conv9)
+    conv9 = layers.Conv2D(PARAMS['channel'], 1)(conv8)
 
-    model = K.models.Model(inputs, conv10)
+    model = K.models.Model(inputs, conv9)
 
     model.summary()
 

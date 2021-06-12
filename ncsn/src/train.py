@@ -30,8 +30,8 @@ PARAMS = {
     "num_L": 10,
     "sigma_high": 10.0,
     "sigma_low": 1.0,
-    "T": 100,
-    "epsilon": 2*1e-5
+    "T": 500,
+    "epsilon": 5*1e-5
 }
 #%%
 if PARAMS['data'] == "cifar10":

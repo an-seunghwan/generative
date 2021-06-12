@@ -19,7 +19,6 @@ from PIL import Image
 import matplotlib.pyplot as plt
 import os
 os.chdir(r'D:/generative/ncsn')
-# os.chdir('/Users/anseunghwan/Documents/GitHub/generative')
 
 from modules import ncsn_models
 #%%
@@ -148,7 +147,13 @@ model.save_weights('./assets/{}/weights_{}_{}_{}_{}_{}_{}'.format(PARAMS['data']
                                                                 PARAMS['epsilon'],))
 
 # imported = ncsn_models.build_refinenet(PARAMS, activation=tf.nn.elu)
-# imported.load_weights('./assets/{}/weights'.format(PARAMS['data']))
+# imported.load_weights('./assets/{}/weights_{}_{}_{}_{}_{}_{}'.format(PARAMS['data'], 
+#                                                                     PARAMS['learning_rate'], 
+#                                                                     PARAMS['num_L'],
+#                                                                     PARAMS['sigma_high'],
+#                                                                     PARAMS['sigma_low'],
+#                                                                     PARAMS['T'],
+#                                                                     PARAMS['epsilon'],))
 #%%
 @tf.function
 def langevin_dynamics(scorenet, x, sigma_i=None, alpha=0.1, T=1000):
@@ -203,7 +208,7 @@ def save_as_grid(images, filename, spacing=2):
             y = row * width + (1 + row) * spacing
             im.paste(tf.keras.preprocessing.image.array_to_img(images[col, row]), (x, y))
     plt.axis('off')
-    # plt.imshow(im)
+    plt.imshow(im)
     plt.savefig('./assets/{}.png'.format(filename), bbox_inches="tight")
     plt.close()
 #%%

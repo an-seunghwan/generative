@@ -29,8 +29,8 @@ PARAMS = {
     "learning_rate": 0.0005, 
     "data": "cifar10", # or "mnist"
     "num_L": 10,
-    "sigma_high": 1.0,
-    "sigma_low": 0.1,
+    "sigma_high": 10.0,
+    "sigma_low": 1.0,
     "T": 100,
     "epsilon": 2*1e-5
 }
@@ -125,6 +125,18 @@ for _ in progress_bar:
     ))
 
     if step == PARAMS['epochs']: break
+#%%
+fig, ax = plt.subplots(figsize=(9, 4))
+ax.plot(loss_history)
+ax.set_title('loss')
+plt.savefig('./ncsn/assets/loss_{}_{}_{}_{}_{}_{}_{}.png'.format(PARAMS['data'], 
+                                                            PARAMS['learning_rate'], 
+                                                            PARAMS['num_L'],
+                                                            PARAMS['sigma_high'],
+                                                            PARAMS['sigma_low'],
+                                                            PARAMS['T'],
+                                                            PARAMS['epsilon'],))
+plt.show()
 #%%
 model.save_weights('./assets/{}/weights_{}_{}_{}_{}_{}_{}'.format(PARAMS['data'], 
                                                                 PARAMS['learning_rate'], 

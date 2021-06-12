@@ -25,8 +25,8 @@ from modules import ncsn_models
 #%%
 PARAMS = {
     "batch_size": 128,
-    "epochs": 100000, # 200000
-    "learning_rate": 0.0005, 
+    "epochs": 10000, # 200000
+    "learning_rate": 0.0001, 
     "data": "cifar10", # or "mnist"
     "num_L": 10,
     "sigma_high": 10.0,
@@ -129,14 +129,15 @@ for _ in progress_bar:
 fig, ax = plt.subplots(figsize=(9, 4))
 ax.plot(loss_history)
 ax.set_title('loss')
-plt.savefig('./ncsn/assets/loss_{}_{}_{}_{}_{}_{}_{}.png'.format(PARAMS['data'], 
+plt.savefig('./assets/loss_{}_{}_{}_{}_{}_{}_{}.png'.format(PARAMS['data'], 
                                                             PARAMS['learning_rate'], 
                                                             PARAMS['num_L'],
                                                             PARAMS['sigma_high'],
                                                             PARAMS['sigma_low'],
                                                             PARAMS['T'],
                                                             PARAMS['epsilon'],))
-plt.show()
+# plt.show()
+plt.close()
 #%%
 model.save_weights('./assets/{}/weights_{}_{}_{}_{}_{}_{}'.format(PARAMS['data'], 
                                                                 PARAMS['learning_rate'], 
@@ -202,8 +203,9 @@ def save_as_grid(images, filename, spacing=2):
             y = row * width + (1 + row) * spacing
             im.paste(tf.keras.preprocessing.image.array_to_img(images[col, row]), (x, y))
     plt.axis('off')
-    plt.imshow(im)
+    # plt.imshow(im)
     plt.savefig('./assets/{}.png'.format(filename), bbox_inches="tight")
+    plt.close()
 #%%
 '''evaluation
 1. generating (intermediate)

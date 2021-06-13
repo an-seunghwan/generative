@@ -28,10 +28,10 @@ PARAMS = {
     "learning_rate": 0.0001, 
     "data": "cifar10", # or "mnist"
     "num_L": 10,
-    "sigma_high": 20.0,
-    "sigma_low": 1.0,
-    "T": 1000,
-    "epsilon": 5*1e-5
+    "sigma_high": 10.0,
+    "sigma_low": 0.1,
+    "T": 100,
+    "epsilon": 0.005
 }
 #%%
 if PARAMS['data'] == "cifar10":
@@ -132,9 +132,7 @@ plt.savefig('./assets/loss_{}_{}_{}_{}_{}_{}_{}.png'.format(PARAMS['data'],
                                                             PARAMS['learning_rate'], 
                                                             PARAMS['num_L'],
                                                             PARAMS['sigma_high'],
-                                                            PARAMS['sigma_low'],
-                                                            PARAMS['T'],
-                                                            PARAMS['epsilon'],))
+                                                            PARAMS['sigma_low']))
 # plt.show()
 plt.close()
 #%%
@@ -142,18 +140,14 @@ model.save_weights('./assets/{}/weights_{}_{}_{}_{}_{}_{}'.format(PARAMS['data']
                                                                 PARAMS['learning_rate'], 
                                                                 PARAMS['num_L'],
                                                                 PARAMS['sigma_high'],
-                                                                PARAMS['sigma_low'],
-                                                                PARAMS['T'],
-                                                                PARAMS['epsilon'],))
+                                                                PARAMS['sigma_low']))
 
-# imported = ncsn_models.build_refinenet(PARAMS, activation=tf.nn.elu)
-# imported.load_weights('./assets/{}/weights_{}_{}_{}_{}_{}_{}'.format(PARAMS['data'], 
-#                                                                     PARAMS['learning_rate'], 
-#                                                                     PARAMS['num_L'],
-#                                                                     PARAMS['sigma_high'],
-#                                                                     PARAMS['sigma_low'],
-#                                                                     PARAMS['T'],
-#                                                                     PARAMS['epsilon'],))
+# model = ncsn_models.build_unet(PARAMS)
+# model.load_weights('./assets/{}/weights_{}_{}_{}_{}_{}_{}'.format(PARAMS['data'], 
+#                                                                 PARAMS['learning_rate'], 
+#                                                                 PARAMS['num_L'],
+#                                                                 PARAMS['sigma_high'],
+#                                                                 PARAMS['sigma_low']))
 #%%
 @tf.function
 def langevin_dynamics(scorenet, x, sigma_i=None, alpha=0.1, T=1000):
@@ -181,9 +175,9 @@ def annealed_langevin_dynamics(scorenet, x, sigma_levels, T=100, eps=0.1, interm
 @tf.function
 def preprocess_image_to_save(x):
     x = tf.clip_by_value(x, 0, 1)
-    # x = x * 255
-    # x = x + 0.5
-    # x = tf.clip_by_value(x, 0, 255)
+    x = x * 255
+    x = x + 0.5
+    x = tf.clip_by_value(x, 0, 255)
     return x
 
 def save_as_grid(images, filename, spacing=2):
@@ -222,15 +216,15 @@ B = 10
 intermediate_images = []
 x_init = tf.random.uniform(shape=(B, PARAMS["data_dim"], PARAMS["data_dim"], PARAMS['channel']))
 intermediate_images.append(x_init)
-intermediate_images += annealed_langevin_dynamics(model, x_init, sigma_levels, T=PARAMS['T'], eps=PARAMS['epsilon'], intermediate=True)
+intermediate_images += annealed_langevin_dynamics(model, x_init, sigma_levels, T=PARAMS['T'], eps=PARAMS['epsilon'], intermediate=False)
 images = tf.stack(intermediate_images)
-save_as_grid(images, '{}_intermediate_{}_{}_{}_{}_{}_{}'.format(PARAMS['data'], 
-                                                                PARAMS['learning_rate'], 
-                                                                PARAMS['num_L'],
-                                                                PARAMS['sigma_high'],
-                                                                PARAMS['sigma_low'],
-                                                                PARAMS['T'],
-                                                                PARAMS['epsilon'],))
+save_as_grid(images, '{}_samples_{}_{}_{}_{}_{}_{}'.format(PARAMS['data'], 
+                                                            PARAMS['learning_rate'], 
+                                                            PARAMS['num_L'],
+                                                            PARAMS['sigma_high'],
+                                                            PARAMS['sigma_low'],
+                                                            PARAMS['T'],
+                                                            PARAMS['epsilon'],))
 #%%
 '''2. the nearest neighborhood (l2 dist)'''
 #%%

@@ -28,9 +28,9 @@ PARAMS = {
     "learning_rate": 0.0001, 
     "data": "cifar10", # or "mnist"
     "num_L": 10,
-    "sigma_high": 10.0,
+    "sigma_high": 20.0,
     "sigma_low": 1.0,
-    "T": 500,
+    "T": 1000,
     "epsilon": 5*1e-5
 }
 #%%

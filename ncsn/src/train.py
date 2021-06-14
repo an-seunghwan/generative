@@ -27,11 +27,11 @@ PARAMS = {
     "epochs": 10000, # 200000
     "learning_rate": 0.0001, 
     "data": "cifar10", # or "mnist"
-    "num_L": 100,
-    "sigma_high": 20.0,
+    "num_L": 200,
+    "sigma_high": 10.0,
     "sigma_low": 1.0,
     "T": 100,
-    "epsilon": 0.01
+    "epsilon": 0.05
 }
 #%%
 if PARAMS['data'] == "cifar10":
@@ -140,18 +140,18 @@ plt.savefig('./assets/loss_{}_{}_{}_{}_{}.png'.format(PARAMS['data'],
 # plt.show()
 plt.close()
 #%%
-model.save_weights('./assets/{}/weights_{}_{}_{}_{}'.format(PARAMS['data'], 
-                                                                PARAMS['learning_rate'], 
-                                                                PARAMS['num_L'],
-                                                                PARAMS['sigma_high'],
-                                                                PARAMS['sigma_low']))
+model.save_weights('./assets/{}/weights_{}_{}_{}_{}/weights'.format(PARAMS['data'], 
+                                                                    PARAMS['learning_rate'], 
+                                                                    PARAMS['num_L'],
+                                                                    PARAMS['sigma_high'],
+                                                                    PARAMS['sigma_low']))
 
 # model = ncsn_models.build_unet(PARAMS)
-# model.load_weights('./assets/{}/weights_{}_{}_{}_{}'.format(PARAMS['data'], 
-#                                                                 PARAMS['learning_rate'], 
-#                                                                 PARAMS['num_L'],
-#                                                                 PARAMS['sigma_high'],
-#                                                                 PARAMS['sigma_low']))
+# model.load_weights('./assets/{}/weights_{}_{}_{}_{}/weights'.format(PARAMS['data'], 
+    #                                                                 PARAMS['learning_rate'], 
+    #                                                                 PARAMS['num_L'],
+    #                                                                 PARAMS['sigma_high'],
+    #                                                                 PARAMS['sigma_low']))
 #%%
 @tf.function
 def langevin_dynamics(scorenet, x, sigma_i=None, alpha=0.1, T=1000):

@@ -27,11 +27,11 @@ PARAMS = {
     "epochs": 10000, # 200000
     "learning_rate": 0.0001, 
     "data": "cifar10", # or "mnist"
-    "num_L": 10,
-    "sigma_high": 10.0,
+    "num_L": 100,
+    "sigma_high": 20.0,
     "sigma_low": 1.0,
     "T": 100,
-    "epsilon": 0.005
+    "epsilon": 0.01
 }
 #%%
 if PARAMS['data'] == "cifar10":

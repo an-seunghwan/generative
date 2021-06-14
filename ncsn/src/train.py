@@ -28,10 +28,10 @@ PARAMS = {
     "learning_rate": 0.0001, 
     "data": "cifar10", # or "mnist"
     "num_L": 200,
-    "sigma_high": 10.0,
-    "sigma_low": 1.0,
+    "sigma_high": 1.0,
+    "sigma_low": 0.01,
     "T": 100,
-    "epsilon": 0.05
+    "epsilon": 0.1
 }
 #%%
 if PARAMS['data'] == "cifar10":
@@ -148,10 +148,10 @@ model.save_weights('./assets/{}/weights_{}_{}_{}_{}/weights'.format(PARAMS['data
 
 # model = ncsn_models.build_unet(PARAMS)
 # model.load_weights('./assets/{}/weights_{}_{}_{}_{}/weights'.format(PARAMS['data'], 
-    #                                                                 PARAMS['learning_rate'], 
-    #                                                                 PARAMS['num_L'],
-    #                                                                 PARAMS['sigma_high'],
-    #                                                                 PARAMS['sigma_low']))
+#                                                                     PARAMS['learning_rate'], 
+#                                                                     PARAMS['num_L'],
+#                                                                     PARAMS['sigma_high'],
+#                                                                     PARAMS['sigma_low']))
 #%%
 @tf.function
 def langevin_dynamics(scorenet, x, sigma_i=None, alpha=0.1, T=1000):

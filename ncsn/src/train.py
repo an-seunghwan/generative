@@ -25,12 +25,12 @@ from modules import ncsn_models
 PARAMS = {
     "batch_size": 128,
     "epochs": 10000, # 200000
-    "learning_rate": 0.0001, 
+    "learning_rate": 0.0003, 
     "data": "cifar10", # or "mnist"
-    "num_L": 200,
-    "sigma_high": 1.0,
-    "sigma_low": 0.01,
-    "T": 100,
+    "num_L": 100,
+    "sigma_high": 10.0,
+    "sigma_low": 1.0,
+    "T": 1000,
     "epsilon": 0.1
 }
 #%%
@@ -218,8 +218,8 @@ def save_as_grid(images, filename, spacing=2):
 '''1. generating (intermediate)'''
 B = 10
 intermediate_images = []
-# x_init = tf.random.uniform(shape=(B, PARAMS["data_dim"], PARAMS["data_dim"], PARAMS['channel']))
-x_init = tf.random.normal(shape=(B, PARAMS["data_dim"], PARAMS["data_dim"], PARAMS['channel']))
+x_init = tf.random.uniform(shape=(B, PARAMS["data_dim"], PARAMS["data_dim"], PARAMS['channel']))
+# x_init = tf.random.normal(shape=(B, PARAMS["data_dim"], PARAMS["data_dim"], PARAMS['channel']))
 intermediate_images.append(x_init)
 intermediate_images += annealed_langevin_dynamics(model, x_init, sigma_levels, T=PARAMS['T'], eps=PARAMS['epsilon'], intermediate=False)
 images = tf.stack(intermediate_images)

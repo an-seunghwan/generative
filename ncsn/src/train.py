@@ -29,7 +29,7 @@ PARAMS = {
     "data": "cifar10", # or "mnist"
     "num_L": 10,
     "sigma_high": 10.0,
-    "sigma_low": 0.1,
+    "sigma_low": 1.0,
     "T": 100,
     "epsilon": 0.005
 }
@@ -39,8 +39,10 @@ if PARAMS['data'] == "cifar10":
     classdict = {i:x for i,x in enumerate(classnames)}
 
     (x_train, _), (_, _) = K.datasets.cifar10.load_data()
-    '''0~1 scaling'''
-    x_train = x_train.astype('float32') / 255.
+    # '''0 ~ 1 scaling'''
+    # x_train = x_train.astype('float32') / 255.
+    '''-1 ~ +1 scaling'''
+    x_train = (x_train.astype('float32') - 127.5) / 127.5
     PARAMS["data_dim"] = x_train.shape[1]
     train_dataset = tf.data.Dataset.from_tensor_slices((x_train)).shuffle(len(x_train), reshuffle_each_iteration=True).batch(PARAMS['batch_size'])
     
@@ -49,8 +51,10 @@ if PARAMS['data'] == "cifar10":
     
 elif PARAMS['data'] == "mnist":
     (x_train, _), (_, _) = K.datasets.mnist.load_data()
-    '''0~1 scaling'''
-    x_train = x_train[..., tf.newaxis].astype('float32') / 255.
+    # '''0 ~ 1 scaling'''
+    # x_train = x_train[..., tf.newaxis].astype('float32') / 255.
+    '''-1 ~ +1 scaling'''
+    x_train = (x_train[..., tf.newaxis].astype('float32') - 127.5) / 127.5
     paddings = [[0, 0],
                 [4, 0],
                 [4, 0],
@@ -128,22 +132,22 @@ for _ in progress_bar:
 fig, ax = plt.subplots(figsize=(9, 4))
 ax.plot(loss_history)
 ax.set_title('loss')
-plt.savefig('./assets/loss_{}_{}_{}_{}_{}_{}_{}.png'.format(PARAMS['data'], 
-                                                            PARAMS['learning_rate'], 
-                                                            PARAMS['num_L'],
-                                                            PARAMS['sigma_high'],
-                                                            PARAMS['sigma_low']))
+plt.savefig('./assets/loss_{}_{}_{}_{}_{}.png'.format(PARAMS['data'], 
+                                                        PARAMS['learning_rate'], 
+                                                        PARAMS['num_L'],
+                                                        PARAMS['sigma_high'],
+                                                        PARAMS['sigma_low']))
 # plt.show()
 plt.close()
 #%%
-model.save_weights('./assets/{}/weights_{}_{}_{}_{}_{}_{}'.format(PARAMS['data'], 
+model.save_weights('./assets/{}/weights_{}_{}_{}_{}'.format(PARAMS['data'], 
                                                                 PARAMS['learning_rate'], 
                                                                 PARAMS['num_L'],
                                                                 PARAMS['sigma_high'],
                                                                 PARAMS['sigma_low']))
 
 # model = ncsn_models.build_unet(PARAMS)
-# model.load_weights('./assets/{}/weights_{}_{}_{}_{}_{}_{}'.format(PARAMS['data'], 
+# model.load_weights('./assets/{}/weights_{}_{}_{}_{}'.format(PARAMS['data'], 
 #                                                                 PARAMS['learning_rate'], 
 #                                                                 PARAMS['num_L'],
 #                                                                 PARAMS['sigma_high'],
@@ -214,7 +218,8 @@ def save_as_grid(images, filename, spacing=2):
 '''1. generating (intermediate)'''
 B = 10
 intermediate_images = []
-x_init = tf.random.uniform(shape=(B, PARAMS["data_dim"], PARAMS["data_dim"], PARAMS['channel']))
+# x_init = tf.random.uniform(shape=(B, PARAMS["data_dim"], PARAMS["data_dim"], PARAMS['channel']))
+x_init = tf.random.normal(shape=(B, PARAMS["data_dim"], PARAMS["data_dim"], PARAMS['channel']))
 intermediate_images.append(x_init)
 intermediate_images += annealed_langevin_dynamics(model, x_init, sigma_levels, T=PARAMS['T'], eps=PARAMS['epsilon'], intermediate=False)
 images = tf.stack(intermediate_images)

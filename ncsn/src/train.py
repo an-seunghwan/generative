@@ -25,13 +25,13 @@ from modules import ncsn_models
 PARAMS = {
     "batch_size": 128,
     "epochs": 10000, # 200000
-    "learning_rate": 0.0003, 
+    "learning_rate": 0.0001, 
     "data": "cifar10", # or "mnist"
-    "num_L": 100,
-    "sigma_high": 10.0,
-    "sigma_low": 1.0,
+    "num_L": 200,
+    "sigma_high": 20.0,
+    "sigma_low": 0.01,
     "T": 1000,
-    "epsilon": 0.1
+    "epsilon": 0.05
 }
 #%%
 if PARAMS['data'] == "cifar10":

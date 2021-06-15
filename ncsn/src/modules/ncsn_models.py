@@ -149,28 +149,36 @@ def build_unet(PARAMS):
     inputs_conv = layers.Conv2D(filters = 128, kernel_size = 3, activation = 'elu', padding = 'same')(inputs)
     
     norm1 = ncsn_layers.InstanceNormPlusPlus2D(PARAMS, 128)(inputs_conv)
-    conv1 = layers.Conv2D(128, 3, activation = 'elu', padding = 'same')(norm1)
+    norm1 = tf.nn.elu(norm1)
+    conv1 = layers.Conv2D(128, 3, padding = 'same')(norm1)
     conv1 = inputs_conv + conv1
     norm1 = ncsn_layers.InstanceNormPlusPlus2D(PARAMS, 128)(conv1)
-    conv1 = layers.Conv2D(128, 3, strides=2, activation = 'elu', padding = 'same')(norm1) 
+    norm1 = tf.nn.elu(norm1)
+    conv1 = layers.Conv2D(128, 3, strides=2, padding = 'same')(norm1) 
 
     norm2 = ncsn_layers.InstanceNormPlusPlus2D(PARAMS, 128)(conv1)
-    conv2 = layers.Conv2D(128, 3, activation = 'elu', padding = 'same')(norm2)
+    norm2 = tf.nn.elu(norm2)
+    conv2 = layers.Conv2D(128, 3, padding = 'same')(norm2)
     conv2 = conv1 + conv2
     norm2 = ncsn_layers.InstanceNormPlusPlus2D(PARAMS, 128)(conv2)
-    conv2 = layers.Conv2D(256, 3, 2, activation = 'elu', padding = 'same')(norm2) 
+    norm2 = tf.nn.elu(norm2)
+    conv2 = layers.Conv2D(256, 3, 2, padding = 'same')(norm2) 
 
     norm3 = ncsn_layers.InstanceNormPlusPlus2D(PARAMS, 256)(conv2)
-    conv3 = layers.Conv2D(256, 3, activation = 'elu', padding = 'same')(norm3)
+    norm3 = tf.nn.elu(norm3)
+    conv3 = layers.Conv2D(256, 3, padding = 'same')(norm3)
     conv3 = conv2 + conv3
     norm3 = ncsn_layers.InstanceNormPlusPlus2D(PARAMS, 256)(conv3)
-    conv3 = layers.Conv2D(256, 3, 2, activation = 'elu', padding = 'same')(norm3)
+    norm3 = tf.nn.elu(norm3)
+    conv3 = layers.Conv2D(256, 3, 2, padding = 'same')(norm3)
 
     norm4 = ncsn_layers.InstanceNormPlusPlus2D(PARAMS, 256)(conv3)
-    conv4 = layers.Conv2D(256, 3, activation = 'elu', padding = 'same')(norm4)
+    norm4 = tf.nn.elu(norm4)
+    conv4 = layers.Conv2D(256, 3, padding = 'same')(norm4)
     conv4 = conv3 + conv4
     norm4 = ncsn_layers.InstanceNormPlusPlus2D(PARAMS, 256)(conv4)
-    conv4 = layers.Conv2D(256, 3, 2, activation = 'elu', padding = 'same')(norm4) 
+    norm4 = tf.nn.elu(norm4)
+    conv4 = layers.Conv2D(256, 3, 2, padding = 'same')(norm4) 
 
     '''expanding path'''
     upconv4 = layers.UpSampling2D(size = (2, 2))(conv4) 
@@ -198,7 +206,8 @@ def build_unet(PARAMS):
     conv8 = layers.Conv2D(128, 3, activation = 'elu', padding = 'same')(conv8) 
 
     '''output layer'''
-    conv9 = layers.Conv2D(PARAMS['channel'], 1)(conv8)
+    conv9 = layers.Conv2D(64, 1, activation = 'elu', padding='same')(conv8)
+    conv9 = layers.Conv2D(PARAMS['channel'], 1, padding='same')(conv9)
 
     model = K.models.Model(inputs, conv9)
 

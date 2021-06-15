@@ -8,5 +8,11 @@ Implementation codes are written with reference to the following github reposito
 - https://github.com/ermongroup/ncsn
 - https://github.com/Xemnas0/NCSN-TF2.0
 
+## 2. Denoising Diffusion Probabilistic Models
+Reproduction of "[Denoising Diffusion Probabilistic Models](https://arxiv.org/abs/2006.11239)" in Tensorflow 2.0.
+Implementation codes are written with reference to the following github repositories:
+- https://github.com/hojonathanho/diffusion
+- https://github.com/hmdolatabadi/denoising_diffusion
+
 <!-- ## 2. Gaussian Process Prior Variational Autoencoders
 - https://github.com/ratschlab/SVGP-VAE -->

@@ -28,10 +28,10 @@ PARAMS = {
     "learning_rate": 0.0001, 
     "data": "cifar10", # or "mnist"
     "num_L": 200,
-    "sigma_high": 20.0,
-    "sigma_low": 0.01,
-    "T": 1000,
-    "epsilon": 0.05
+    "sigma_high": 50.0,
+    "sigma_low": 0.1,
+    "T": 5000,
+    "epsilon": 0.000005
 }
 #%%
 if PARAMS['data'] == "cifar10":
@@ -181,9 +181,9 @@ def annealed_langevin_dynamics(scorenet, x, sigma_levels, T=100, eps=0.1, interm
 @tf.function
 def preprocess_image_to_save(x):
     x = tf.clip_by_value(x, 0, 1)
-    x = x * 255
-    x = x + 0.5
-    x = tf.clip_by_value(x, 0, 255)
+    # x = x * 255
+    # x = x + 0.5
+    # x = tf.clip_by_value(x, 0, 255)
     return x
 
 def save_as_grid(images, filename, spacing=2):

@@ -114,9 +114,9 @@ def build_refinenet(PARAMS, activation=tf.nn.elu):
     ResBlock6 = ResBlock(PARAMS, activation, x5.shape[-1], 256, 3, False, 2)
     x6 = ResBlock6(x5)
     
-    ResBlock7 = ResBlock(PARAMS, activation, x6.shape[-1], 256, 3, True, 2)
+    ResBlock7 = ResBlock(PARAMS, activation, x6.shape[-1], 256, 3, True, 4)
     x7 = ResBlock7(x6)
-    ResBlock8 = ResBlock(PARAMS, activation, x7.shape[-1], 256, 3, False, 2)
+    ResBlock8 = ResBlock(PARAMS, activation, x7.shape[-1], 256, 3, False, 4)
     x8 = ResBlock8(x7)
     
     RefineBlock3 = RefineBlock(PARAMS, activation, x8.shape[-1], None, 256, 3, 2)

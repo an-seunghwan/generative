@@ -28,7 +28,7 @@ PARAMS = {
     "epochs": 10000, # 200000
     "learning_rate": 0.00005, 
     "data": "cifar10", # or "mnist"
-    "num_L": 50,
+    "num_L": 232,
     "sigma_high": 50.0,
     "sigma_low": 0.1,
     "T": 100,
@@ -221,8 +221,8 @@ def save_as_grid(images, filename, spacing=2):
 '''1. generating (intermediate)'''
 B = 10
 intermediate_images = []
-x_init = tf.random.uniform(shape=(B, PARAMS["data_dim"], PARAMS["data_dim"], PARAMS['channel']))
-# x_init = tf.random.normal(shape=(B, PARAMS["data_dim"], PARAMS["data_dim"], PARAMS['channel']))
+# x_init = tf.random.uniform(shape=(B, PARAMS["data_dim"], PARAMS["data_dim"], PARAMS['channel']))
+x_init = tf.random.normal(shape=(B, PARAMS["data_dim"], PARAMS["data_dim"], PARAMS['channel']))
 intermediate_images.append(x_init)
 intermediate_images += annealed_langevin_dynamics(model, x_init, sigma_levels, T=PARAMS['T'], eps=PARAMS['epsilon'], intermediate=False)
 images = tf.stack(intermediate_images)

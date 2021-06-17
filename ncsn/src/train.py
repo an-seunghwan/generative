@@ -124,8 +124,8 @@ for _ in progress_bar:
     current_loss = train_one_step(model, optimizer, x_batch_perturbed, x_batch, idx_sigmas, sigmas)
     loss_history.append(current_loss.numpy())
 
-    progress_bar.set_description('setting: {} lr:{} L:{} sigma:{} to {} | iteration {}/{} | current loss {:.3f}'.format(
-        PARAMS['data'], PARAMS['learning_rate'], PARAMS['num_L'], PARAMS['sigma_high'], PARAMS['sigma_low'], 
+    progress_bar.set_description('setting: {} epochs:{} lr:{} L:{} sigma:{} to {} | iteration {}/{} | current loss {:.3f}'.format(
+        PARAMS['data'], PARAMS['epochs'], PARAMS['learning_rate'], PARAMS['num_L'], PARAMS['sigma_high'], PARAMS['sigma_low'], 
         step, PARAMS['epochs'], 
         current_loss
     ))

@@ -185,39 +185,42 @@ def build_unet(PARAMS):
 
     upconv5 = layers.UpSampling2D(size = (2, 2))(conv5) 
     conv6 = layers.Conv2D(256, 3, activation = 'elu', padding = 'same')(upconv5) 
-    conv6 = conv6 + conv3
+    conv6 = layers.concatenate([conv6, conv3], axis=-1)
+    # conv6 = conv6 + conv3
     skip_conv6 = layers.Conv2D(256, 3, activation = 'elu', padding = 'same')(conv6)
     pool6 = layers.MaxPooling2D(pool_size=(5, 5), strides=(1, 1), padding="same")(skip_conv6) 
     conv6 = layers.Conv2D(256, 3, activation = 'elu', padding = 'same')(pool6)
     conv6 = conv6 + skip_conv6
-    conv6 = layers.Conv2D(256, 3, activation = 'elu', padding = 'same')(conv6)
 
     upconv6 = layers.UpSampling2D(size = (2, 2))(conv6) 
     conv7 = layers.Conv2D(128, 3, activation = 'elu', padding = 'same')(upconv6) 
-    conv7 = conv7 + conv2
+    conv7 = layers.concatenate([conv7, conv2], axis=-1)
+    # conv7 = conv7 + conv2
     skip_conv7 = layers.Conv2D(128, 3, activation = 'elu', padding = 'same')(conv7)
     pool7 = layers.MaxPooling2D(pool_size=(5, 5), strides=(1, 1), padding="same")(skip_conv7) 
     conv7 = layers.Conv2D(128, 3, activation = 'elu', padding = 'same')(pool7)
     conv7 = conv7 + skip_conv7
-    conv7 = layers.Conv2D(128, 3, activation = 'elu', padding = 'same')(conv7)
     
     upconv7 = layers.UpSampling2D(size = (2, 2))(conv7) 
     conv8 = layers.Conv2D(64, 3, activation = 'elu', padding = 'same')(upconv7)
-    conv8 = conv8 + conv1
+    conv8 = layers.concatenate([conv8, conv1], axis=-1)
+    # conv8 = conv8 + conv1
     skip_conv8 = layers.Conv2D(64, 3, activation = 'elu', padding = 'same')(conv8)
     pool8 = layers.MaxPooling2D(pool_size=(5, 5), strides=(1, 1), padding="same")(skip_conv8) 
     conv8 = layers.Conv2D(64, 3, activation = 'elu', padding = 'same')(pool8) 
-    conv8 = pool8 + skip_conv8
-    conv8 = layers.Conv2D(64, 3, activation = 'elu', padding = 'same')(conv8) 
+    conv8 = conv8 + skip_conv8
 
     upconv8 = layers.UpSampling2D(size = (2, 2))(conv8) 
     conv9 = layers.Conv2D(64, 3, activation = 'elu', padding = 'same')(upconv8)
-    conv9 = conv9 + inputs_conv
+    conv9 = layers.concatenate([conv9, inputs_conv], axis=-1)
+    # conv9 = conv9 + inputs_conv
     skip_conv9 = layers.Conv2D(64, 3, activation = 'elu', padding = 'same')(conv9)
     pool9 = layers.MaxPooling2D(pool_size=(5, 5), strides=(1, 1), padding="same")(skip_conv9) 
     conv9 = layers.Conv2D(64, 3, activation = 'elu', padding = 'same')(pool9) 
-    conv9 = pool9 + skip_conv9
-    conv9 = layers.Conv2D(64, 3, activation = 'elu', padding = 'same')(conv9)
+    conv9 = conv9 + skip_conv9
+    
+    '''output layer'''
+    conv9 = layers.Conv2D(32, 3, activation = 'elu', padding = 'same')(conv9) 
     conv9 = layers.Conv2D(PARAMS['channel'], 1, padding='same')(conv9)
 
     model = K.models.Model(inputs, conv9)

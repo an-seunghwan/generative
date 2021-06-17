@@ -26,9 +26,9 @@ from modules import ncsn_models
 PARAMS = {
     "batch_size": 128,
     "epochs": 10000, # 200000
-    "learning_rate": 0.0001, 
+    "learning_rate": 0.00005, 
     "data": "cifar10", # or "mnist"
-    "num_L": 500,
+    "num_L": 200,
     "sigma_high": 50.0,
     "sigma_low": 0.1,
     "T": 100,

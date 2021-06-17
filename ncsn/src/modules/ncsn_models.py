@@ -146,28 +146,28 @@ def build_unet(PARAMS):
 
     '''contracting path'''
     inputs = layers.Input(input_size)
-    inputs_conv = layers.Conv2D(filters = 128, kernel_size = 3, activation = 'elu', padding = 'same')(inputs)
+    inputs_conv = layers.Conv2D(filters = 64, kernel_size = 3, activation = 'elu', padding = 'same')(inputs)
     
-    norm1 = ncsn_layers.InstanceNormPlusPlus2D(PARAMS, 128)(inputs_conv)
+    norm1 = ncsn_layers.InstanceNormPlusPlus2D(PARAMS, 64)(inputs_conv)
     norm1 = tf.nn.elu(norm1)
-    conv1 = layers.Conv2D(128, 3, 1, padding = 'same')(norm1)
-    norm1 = ncsn_layers.InstanceNormPlusPlus2D(PARAMS, 128)(conv1)
+    conv1 = layers.Conv2D(64, 3, 1, padding = 'same')(norm1)
+    norm1 = ncsn_layers.InstanceNormPlusPlus2D(PARAMS, 64)(conv1)
     norm1 = tf.nn.elu(norm1)
-    conv1 = layers.Conv2D(128, 3, 1, padding = 'same')(norm1) 
+    conv1 = layers.Conv2D(64, 3, 2, padding = 'same')(norm1) 
 
-    norm2 = ncsn_layers.InstanceNormPlusPlus2D(PARAMS, 128)(conv1)
+    norm2 = ncsn_layers.InstanceNormPlusPlus2D(PARAMS, 64)(conv1)
     norm2 = tf.nn.elu(norm2)
     conv2 = layers.Conv2D(128, 3, 1, padding = 'same')(norm2)
     norm2 = ncsn_layers.InstanceNormPlusPlus2D(PARAMS, 128)(conv2)
     norm2 = tf.nn.elu(norm2)
-    conv2 = layers.Conv2D(256, 3, 2, padding = 'same')(norm2) 
+    conv2 = layers.Conv2D(128, 3, 2, padding = 'same')(norm2) 
 
-    norm3 = ncsn_layers.InstanceNormPlusPlus2D(PARAMS, 256)(conv2)
+    norm3 = ncsn_layers.InstanceNormPlusPlus2D(PARAMS, 128)(conv2)
     norm3 = tf.nn.elu(norm3)
     conv3 = layers.Conv2D(256, 3, 1, padding = 'same')(norm3)
     norm3 = ncsn_layers.InstanceNormPlusPlus2D(PARAMS, 256)(conv3)
     norm3 = tf.nn.elu(norm3)
-    conv3 = layers.Conv2D(256, 3, 1, padding = 'same')(norm3)
+    conv3 = layers.Conv2D(256, 3, 2, padding = 'same')(norm3)
 
     norm4 = ncsn_layers.InstanceNormPlusPlus2D(PARAMS, 256)(conv3)
     norm4 = tf.nn.elu(norm4)
@@ -177,43 +177,47 @@ def build_unet(PARAMS):
     conv4 = layers.Conv2D(256, 3, 2, padding = 'same')(norm4) 
 
     '''expanding path'''
-    upconv4 = layers.UpSampling2D(size = (2, 2))(conv4) 
-    skip_conv5 = layers.Conv2D(256, 3, activation = 'elu', padding = 'same')(upconv4)
-    conv5 = layers.concatenate([skip_conv5, conv3], axis = 3)
-    conv5 = layers.Conv2D(256, 3, activation = 'elu', padding = 'same')(conv5)
-    conv5 = skip_conv5 + conv5
+    skip_conv5 = layers.Conv2D(256, 3, activation = 'elu', padding = 'same')(conv4)
+    pool5 = layers.MaxPooling2D(pool_size=(5, 5), strides=(1, 1), padding="same")(skip_conv5) 
+    conv5 = layers.Conv2D(256, 3, activation = 'elu', padding = 'same')(pool5)
+    conv5 = conv5 + skip_conv5
     conv5 = layers.Conv2D(256, 3, activation = 'elu', padding = 'same')(conv5)
 
-    conv5 = ncsn_layers.InstanceNormPlusPlus2D(PARAMS, 256)(conv5)
-    # upconv5 = layers.UpSampling2D(size = (2, 2))(conv5) 
-    # conv6 = layers.Conv2D(256, 3, activation = 'elu', padding = 'same')(upconv5) 
-    skip_conv6 = layers.Conv2D(256, 3, activation = 'elu', padding = 'same')(conv5) 
-    conv6 = layers.concatenate([skip_conv6, conv2], axis = 3)
-    conv6 = layers.Conv2D(256, 3, activation = 'elu', padding = 'same')(conv6)
-    conv6 = skip_conv6 + conv6
+    upconv5 = layers.UpSampling2D(size = (2, 2))(conv5) 
+    conv6 = layers.Conv2D(256, 3, activation = 'elu', padding = 'same')(upconv5) 
+    conv6 = conv6 + conv3
+    skip_conv6 = layers.Conv2D(256, 3, activation = 'elu', padding = 'same')(conv6)
+    pool6 = layers.MaxPooling2D(pool_size=(5, 5), strides=(1, 1), padding="same")(skip_conv6) 
+    conv6 = layers.Conv2D(256, 3, activation = 'elu', padding = 'same')(pool6)
+    conv6 = conv6 + skip_conv6
     conv6 = layers.Conv2D(256, 3, activation = 'elu', padding = 'same')(conv6)
 
-    conv6 = ncsn_layers.InstanceNormPlusPlus2D(PARAMS, 256)(conv6)
     upconv6 = layers.UpSampling2D(size = (2, 2))(conv6) 
-    skip_conv7 = layers.Conv2D(128, 3, activation = 'elu', padding = 'same')(upconv6) 
-    conv7 = layers.concatenate([skip_conv7, conv1], axis = 3)
-    conv7 = layers.Conv2D(128, 3, activation = 'elu', padding = 'same')(conv7)
-    conv7 = skip_conv7 + conv7
+    conv7 = layers.Conv2D(128, 3, activation = 'elu', padding = 'same')(upconv6) 
+    conv7 = conv7 + conv2
+    skip_conv7 = layers.Conv2D(128, 3, activation = 'elu', padding = 'same')(conv7)
+    pool7 = layers.MaxPooling2D(pool_size=(5, 5), strides=(1, 1), padding="same")(skip_conv7) 
+    conv7 = layers.Conv2D(128, 3, activation = 'elu', padding = 'same')(pool7)
+    conv7 = conv7 + skip_conv7
     conv7 = layers.Conv2D(128, 3, activation = 'elu', padding = 'same')(conv7)
     
-    conv7 = ncsn_layers.InstanceNormPlusPlus2D(PARAMS, 128)(conv7)
-    # upconv7 = layers.UpSampling2D(size = (2, 2))(conv7) 
-    # conv8 = layers.Conv2D(128, 3, activation = 'elu', padding = 'same')(upconv7)
-    skip_conv8 = layers.Conv2D(128, 3, activation = 'elu', padding = 'same')(conv7)
-    conv8 = layers.concatenate([skip_conv8, inputs_conv], axis = 3)
-    conv8 = layers.Conv2D(128, 3, activation = 'elu', padding = 'same')(conv8) 
-    conv8 = skip_conv8 + conv8
-    conv8 = layers.Conv2D(128, 3, activation = 'elu', padding = 'same')(conv8) 
+    upconv7 = layers.UpSampling2D(size = (2, 2))(conv7) 
+    conv8 = layers.Conv2D(64, 3, activation = 'elu', padding = 'same')(upconv7)
+    conv8 = conv8 + conv1
+    skip_conv8 = layers.Conv2D(64, 3, activation = 'elu', padding = 'same')(conv8)
+    pool8 = layers.MaxPooling2D(pool_size=(5, 5), strides=(1, 1), padding="same")(skip_conv8) 
+    conv8 = layers.Conv2D(64, 3, activation = 'elu', padding = 'same')(pool8) 
+    conv8 = pool8 + skip_conv8
+    conv8 = layers.Conv2D(64, 3, activation = 'elu', padding = 'same')(conv8) 
 
-    '''output layer'''
-    conv8 = ncsn_layers.InstanceNormPlusPlus2D(PARAMS, 128)(conv8)
-    conv9 = layers.Conv2D(64, 1, activation = 'elu', padding='same')(conv8)
-    conv9 = ncsn_layers.InstanceNormPlusPlus2D(PARAMS, 64)(conv9)
+    upconv8 = layers.UpSampling2D(size = (2, 2))(conv8) 
+    conv9 = layers.Conv2D(64, 3, activation = 'elu', padding = 'same')(upconv8)
+    conv9 = conv9 + inputs_conv
+    skip_conv9 = layers.Conv2D(64, 3, activation = 'elu', padding = 'same')(conv9)
+    pool9 = layers.MaxPooling2D(pool_size=(5, 5), strides=(1, 1), padding="same")(skip_conv9) 
+    conv9 = layers.Conv2D(64, 3, activation = 'elu', padding = 'same')(pool9) 
+    conv9 = pool9 + skip_conv9
+    conv9 = layers.Conv2D(64, 3, activation = 'elu', padding = 'same')(conv9)
     conv9 = layers.Conv2D(PARAMS['channel'], 1, padding='same')(conv9)
 
     model = K.models.Model(inputs, conv9)

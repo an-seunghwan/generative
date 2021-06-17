@@ -28,7 +28,7 @@ PARAMS = {
     "epochs": 10000, # 200000
     "learning_rate": 0.0001, 
     "data": "cifar10", # or "mnist"
-    "num_L": 200,
+    "num_L": 500,
     "sigma_high": 50.0,
     "sigma_low": 0.1,
     "T": 100,

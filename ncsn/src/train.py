@@ -18,21 +18,21 @@ import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
 import os
-# os.chdir(r'D:/generative/ncsn')
-os.chdir('/Users/anseunghwan/Documents/GitHub/generative/ncsn')
+os.chdir(r'D:/generative/ncsn')
+# os.chdir('/Users/anseunghwan/Documents/GitHub/generative/ncsn')
 
 from modules import ncsn_models
 #%%
 PARAMS = {
     "batch_size": 128,
     "epochs": 10000, # 200000
-    "learning_rate": 0.001, 
+    "learning_rate": 0.0001, 
     "data": "cifar10", # or "mnist"
     "num_L": 500,
     "sigma_high": 50.0,
     "sigma_low": 0.1,
     "T": 100,
-    "epsilon": 0.00005
+    "epsilon": 0.000005
 }
 #%%
 if PARAMS['data'] == "cifar10":
@@ -71,8 +71,8 @@ else:
     print('Invalid data type!')
     assert 0 == 1
 #%%
-# model = ncsn_models.build_refinenet(PARAMS, activation=tf.nn.elu)
-model = ncsn_models.build_unet(PARAMS)
+model = ncsn_models.build_refinenet(PARAMS, activation=tf.nn.elu)
+# model = ncsn_models.build_unet(PARAMS)
 optimizer = K.optimizers.Adam(learning_rate=PARAMS['learning_rate'])
 
 step = 0
@@ -182,9 +182,9 @@ def annealed_langevin_dynamics(scorenet, x, sigma_levels, T=100, eps=0.1, interm
 @tf.function
 def preprocess_image_to_save(x):
     x = tf.clip_by_value(x, 0, 1)
-    # x = x * 255
-    # x = x + 0.5
-    # x = tf.clip_by_value(x, 0, 255)
+    x = x * 255
+    x = x + 0.5
+    x = tf.clip_by_value(x, 0, 255)
     return x
 
 def save_as_grid(images, filename, spacing=2):

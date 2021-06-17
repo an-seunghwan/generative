@@ -213,7 +213,7 @@ def build_unet(PARAMS):
     '''output layer'''
     conv8 = ncsn_layers.InstanceNormPlusPlus2D(PARAMS, 128)(conv8)
     conv9 = layers.Conv2D(64, 1, activation = 'elu', padding='same')(conv8)
-    conv9 = ncsn_layers.InstanceNormPlusPlus2D(PARAMS, 128)(conv9)
+    conv9 = ncsn_layers.InstanceNormPlusPlus2D(PARAMS, 64)(conv9)
     conv9 = layers.Conv2D(PARAMS['channel'], 1, padding='same')(conv9)
 
     model = K.models.Model(inputs, conv9)

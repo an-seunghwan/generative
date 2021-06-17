@@ -119,37 +119,21 @@ def build_refinenet(PARAMS, activation=tf.nn.elu):
     ResBlock8 = ResBlock(PARAMS, activation, x7.shape[-1], 256, 3, False, 2)
     x8 = ResBlock8(x7)
     
-    ResBlock9 = ResBlock(PARAMS, activation, x8.shape[-1], 512, 3, True, 4)
-    x9 = ResBlock9(x8)
-    ResBlock10 = ResBlock(PARAMS, activation, x9.shape[-1], 512, 3, False, 4)
-    x10 = ResBlock10(x9)
+    RefineBlock3 = RefineBlock(PARAMS, activation, x8.shape[-1], None, 256, 3, 2)
+    y1 = RefineBlock3(x8, None)
     
-    ResBlock11 = ResBlock(PARAMS, activation, x10.shape[-1], 512, 3, True, 4)
-    x11 = ResBlock11(x10)
-    ResBlock12 = ResBlock(PARAMS, activation, x11.shape[-1], 512, 3, False, 4)
-    x12 = ResBlock12(x11)
+    RefineBlock4 = RefineBlock(PARAMS, activation, x6.shape[-1], y1.shape[-1], 256, 3, 2)
+    y2 = RefineBlock4(x6, y1)
     
-    RefineBlock1 = RefineBlock(PARAMS, activation, x12.shape[-1], None, 512, 3, 2)
-    y1 = RefineBlock1(x12, None)
+    RefineBlock4 = RefineBlock(PARAMS, activation, x4.shape[-1], y2.shape[-1], 128, 3, 2)
+    y3 = RefineBlock4(x4, y2)
     
-    RefineBlock2 = RefineBlock(PARAMS, activation, x10.shape[-1], y1.shape[-1], 512, 3, 2)
-    y2 = RefineBlock2(x10, y1)
+    RefineBlock4 = RefineBlock(PARAMS, activation, x2.shape[-1], y3.shape[-1], 128, 3, 2)
+    y4 = RefineBlock4(x2, y3)
     
-    RefineBlock3 = RefineBlock(PARAMS, activation, x8.shape[-1], y2.shape[-1], 256, 3, 2)
-    y3 = RefineBlock3(x8, y2)
-    
-    RefineBlock4 = RefineBlock(PARAMS, activation, x6.shape[-1], y3.shape[-1], 256, 3, 2)
-    y4 = RefineBlock4(x6, y3)
-    
-    RefineBlock4 = RefineBlock(PARAMS, activation, x4.shape[-1], y4.shape[-1], 128, 3, 2)
-    y5 = RefineBlock4(x4, y4)
-    
-    RefineBlock4 = RefineBlock(PARAMS, activation, x2.shape[-1], y5.shape[-1], 128, 3, 2)
-    y6 = RefineBlock4(x2, y5)
-    
-    instancenorm_end = ncsn_layers.InstanceNormPlusPlus2D(PARAMS, y6.shape[-1])
+    instancenorm_end = ncsn_layers.InstanceNormPlusPlus2D(PARAMS, y4.shape[-1])
     conv_end = layers.Conv2D(PARAMS['channel'], 3, 1, padding='same') 
-    outputs = conv_end(instancenorm_end(y6))
+    outputs = conv_end(instancenorm_end(y4))
     
     model = K.models.Model(inputs, outputs)
     

@@ -28,11 +28,11 @@ PARAMS = {
     "epochs": 10000, # 200000
     "learning_rate": 0.00005, 
     "data": "cifar10", # or "mnist"
-    "num_L": 200,
+    "num_L": 50,
     "sigma_high": 50.0,
     "sigma_low": 0.1,
     "T": 100,
-    "epsilon": 0.000005
+    "epsilon": 0.00006
 }
 #%%
 if PARAMS['data'] == "cifar10":
@@ -149,7 +149,7 @@ model.save_weights('./assets/{}/weights_{}_{}_{}_{}/weights'.format(PARAMS['data
                                                                     PARAMS['sigma_high'],
                                                                     PARAMS['sigma_low']))
 
-# model = ncsn_models.build_unet(PARAMS)
+# model = ncsn_models.build_refinenet(PARAMS)
 # model.load_weights('./assets/{}/weights_{}_{}_{}_{}/weights'.format(PARAMS['data'], 
 #                                                                     PARAMS['learning_rate'], 
 #                                                                     PARAMS['num_L'],

@@ -22,7 +22,7 @@ class InstanceNormPlusPlus2D(layers.Layer):
                                     initializer='random_normal',   
                                     trainable=True)
         self.gamma = self.add_weight(name='gamma', 
-                                     shape=(1, 1, 1, self.feature_num),
+                                    shape=(1, 1, 1, self.feature_num),
                                     initializer='random_normal',   
                                     trainable=True)
 

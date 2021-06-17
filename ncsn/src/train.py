@@ -30,8 +30,8 @@ PARAMS = {
     "num_L": 200,
     "sigma_high": 50.0,
     "sigma_low": 0.1,
-    "T": 500,
-    "epsilon": 0.000006
+    "T": 100,
+    "epsilon": 0.00005
 }
 #%%
 if PARAMS['data'] == "cifar10":
@@ -70,8 +70,8 @@ else:
     print('Invalid data type!')
     assert 0 == 1
 #%%
-# model = ncsn_models.build_refinenet(PARAMS, activation=tf.nn.elu)
-model = ncsn_models.build_unet(PARAMS)
+model = ncsn_models.build_refinenet(PARAMS, activation=tf.nn.elu)
+# model = ncsn_models.build_unet(PARAMS)
 optimizer = K.optimizers.Adam(learning_rate=PARAMS['learning_rate'])
 
 step = 0

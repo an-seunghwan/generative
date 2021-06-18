@@ -27,12 +27,12 @@ PARAMS = {
     "batch_size": 128,
     "epochs": 100000, # 200000
     "learning_rate": 0.00001, 
-    "data": "cifar10", 
+    "data": "mnist", 
     "num_L": 200,
-    "sigma_high": 50.0,
+    "sigma_high": 20.0,
     "sigma_low": 0.1,
     "T": 100,
-    "epsilon": 0.0001
+    "epsilon": 0.00005
 }
 #%%
 if PARAMS['data'] == "cifar10":

@@ -71,7 +71,7 @@ else:
     print('Invalid data type!')
     assert 0 == 1
 #%%
-base_model = K.applications.ResNet50(input_shape=[32, 32, 3], include_top=False)
+base_model = K.applications.ResNet50(input_shape=[32, 32, 1], include_top=False)
 
 # base_model.summary()
 
@@ -100,7 +100,7 @@ up_stack = [
 ]
 #%%
 def unet_model(output_channels, activation=tf.nn.elu):
-    inputs = K.layers.Input(shape=[32, 32, 3])
+    inputs = K.layers.Input(shape=[32, 32, 1])
     x = inputs
 
     skips = down_stack(x)

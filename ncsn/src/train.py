@@ -32,7 +32,7 @@ PARAMS = {
     "sigma_high": 50.0,
     "sigma_low": 0.1,
     "T": 100,
-    "epsilon": 0.00006
+    "epsilon": 0.000009
 }
 #%%
 if PARAMS['data'] == "cifar10":
@@ -148,13 +148,13 @@ model.save_weights('./assets/{}/weights_{}_{}_{}_{}/weights'.format(PARAMS['data
                                                                     PARAMS['num_L'],
                                                                     PARAMS['sigma_high'],
                                                                     PARAMS['sigma_low']))
-
-# model = ncsn_models.build_refinenet(PARAMS)
-# model.load_weights('./assets/{}/weights_{}_{}_{}_{}/weights'.format(PARAMS['data'], 
-#                                                                     PARAMS['learning_rate'], 
-#                                                                     PARAMS['num_L'],
-#                                                                     PARAMS['sigma_high'],
-#                                                                     PARAMS['sigma_low']))
+#%%
+model = ncsn_models.build_refinenet(PARAMS)
+model.load_weights('./assets/{}/weights_{}_{}_{}_{}/weights'.format(PARAMS['data'], 
+                                                                    PARAMS['learning_rate'], 
+                                                                    PARAMS['num_L'],
+                                                                    PARAMS['sigma_high'],
+                                                                    PARAMS['sigma_low']))
 #%%
 @tf.function
 def langevin_dynamics(scorenet, x, sigma_i=None, alpha=0.1, T=1000):
@@ -221,6 +221,7 @@ def save_as_grid(images, filename, spacing=2):
 '''1. generating (intermediate)'''
 B = 10
 intermediate_images = []
+tf.random.set_seed(520)
 # x_init = tf.random.uniform(shape=(B, PARAMS["data_dim"], PARAMS["data_dim"], PARAMS['channel']))
 x_init = tf.random.normal(shape=(B, PARAMS["data_dim"], PARAMS["data_dim"], PARAMS['channel']))
 intermediate_images.append(x_init)

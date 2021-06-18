@@ -65,7 +65,56 @@ else:
     print('Invalid data type!')
     assert 0 == 1
 #%%
-sigma_levels = tf.linspace(tf.math.log(PARAMS['sigma_high']),
-                                        tf.math.log(PARAMS['sigma_low']),
-                                        PARAMS['T'])
+base_model = K.applications.ResNet50(input_shape=[32, 32, 3], include_top=False)
+
+# base_model.summary()
+
+layer_names = [
+    'conv1_relu',   # 16x16x64
+    'conv2_block3_out',   # 8x8x256
+    'conv3_block4_out',   # 4x4x512
+    'conv4_block6_out',   # 2x2x1024
+    'conv5_block3_out',   # 1x1x2048
+]
+layers = [base_model.get_layer(name).output for name in layer_names]
+
+down_stack = K.Model(inputs=base_model.input, outputs=layers)
+
+down_stack.trainable = True
+#%%
+from tensorflow_examples.models.pix2pix import pix2pix
+
+up_stack = [
+    pix2pix.upsample(2048, 3),    
+    pix2pix.upsample(1024, 3),  
+    pix2pix.upsample(512, 3),  
+    pix2pix.upsample(256, 3),  
+    pix2pix.upsample(64, 3),   
+    pix2pix.upsample(64, 3),   
+]
+#%%
+def unet_model(output_channels, activation=tf.nn.elu):
+    inputs = K.layers.Input(shape=[32, 32, 3])
+    x = inputs
+
+    skips = down_stack(x)
+    x = skips[-1]
+    skips = reversed(skips[:-1])
+
+    for up, skip in zip(up_stack[:-1], skips):
+        x = up(x)
+        concat = tf.keras.layers.Concatenate()
+        x = concat([x, skip])
+    x = up_stack[-1](x)
+    x = concat([x, inputs])
+
+    last1 = K.layers.Conv2D(32, 3, activation=activation, padding='same')  
+    last2 = K.layers.Conv2D(output_channels, 3, padding='same')  
+
+    x = last2(last1(x))
+
+    return K.Model(inputs=inputs, outputs=x)
+#%%
+model = unet_model(PARAMS['channel'])
+model.summary()
 #%%

@@ -27,9 +27,9 @@ PARAMS = {
     "batch_size": 128,
     "epochs": 100000, # 200000
     "learning_rate": 0.00001, 
-    "data": "mnist", 
+    "data": "cifar10", 
     "num_L": 200,
-    "sigma_high": 20.0,
+    "sigma_high": 50.0,
     "sigma_low": 0.1,
     "T": 100,
     "epsilon": 0.00005
@@ -71,7 +71,7 @@ else:
     print('Invalid data type!')
     assert 0 == 1
 #%%
-base_model = K.applications.ResNet50(input_shape=[32, 32, 1], include_top=False)
+base_model = K.applications.ResNet50(input_shape=[32, 32, 3], include_top=False)
 
 # base_model.summary()
 
@@ -100,7 +100,7 @@ up_stack = [
 ]
 #%%
 def unet_model(output_channels, activation=tf.nn.elu):
-    inputs = K.layers.Input(shape=[32, 32, 1])
+    inputs = K.layers.Input(shape=[32, 32, 3])
     x = inputs
 
     skips = down_stack(x)

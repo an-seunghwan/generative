@@ -105,7 +105,7 @@ def attn_block(x):
     return x + h
 #%%
 def model(x, timesteps, embedding_dim, out_ch, 
-        dropout=0., embedding_dim_mult=(1, 2, 4, 8), num_res_blocks=3, attn_resolutions=(16, ), resamp_with_conv=True):
+        dropout=0., embedding_dim_mult=(1, 2, 4, 8), num_res_blocks=2, attn_resolutions=(16, ), resamp_with_conv=True):
     
     # x = layers.Input((32, 32, 3))
     # timesteps = layers.Input(())
@@ -134,7 +134,7 @@ def model(x, timesteps, embedding_dim, out_ch,
             # Downsample
         if i_level != num_resolutions - 1:
             hs.append(downsample(hs[-1], with_conv=resamp_with_conv))
-
+            
     '''Middle'''
     h = hs[-1]
     h = resnet_block(h, temb=temb, dropout=dropout)

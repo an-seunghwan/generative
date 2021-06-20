@@ -17,8 +17,8 @@ import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
 import os
-os.chdir(r'D:/generative/ddpm')
-# os.chdir('/Users/anseunghwan/Documents/GitHub/generative/ddpm')
+# os.chdir(r'D:/generative/ddpm')
+os.chdir('/Users/anseunghwan/Documents/GitHub/generative/ddpm')
 
 from modules import models
 #%%
@@ -80,12 +80,11 @@ alphas = 1. - betas
 alphas_cumprod_sqrt = np.sqrt(np.cumprod(alphas, axis=0))
 alphas_cumprod_one_minus_sqrt = np.sqrt(1 - np.cumprod(alphas, axis=0))
 #%%
-#%%
 model = models.Unet(PARAMS, PARAMS['embedding_dim'], PARAMS['channel'], dropout=0., embedding_dim_mult=(1, 2, 4, 8), num_res_blocks=3, attn_resolutions=(16, ), resamp_with_conv=True)
 optimizer = K.optimizers.Adam(learning_rate=PARAMS['learning_rate'])
 mse = K.losses.MeanSquaredError()
 
-# tf decorator 필요
+@tf.function
 def train_one_step(PARAMS, optimizer, x_batch_perturbed, epsilon, timesteps):
     with tf.GradientTape() as tape:
         pred = model(x_batch_perturbed, timesteps)

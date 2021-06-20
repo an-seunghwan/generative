@@ -20,13 +20,17 @@ import os
 # os.chdir(r'D:/generative/ddpm')
 os.chdir('/Users/anseunghwan/Documents/GitHub/generative/ddpm')
 
-# from modules import ncsn_models
+from modules import models
 #%%
 PARAMS = {
     "batch_size": 128,
     "epochs": 10000, # 200000
     "learning_rate": 0.0001, 
-    "data": "cifar10", # or "mnist"
+    "data": "mnist", # or "mnist"
+    "embedding_dim": 16, 
+    "T": 1000,
+    "beta_start": 0.0001,
+    "beta_end": 0.02,
 }
 #%%
 if PARAMS['data'] == "cifar10":
@@ -65,56 +69,54 @@ else:
     print('Invalid data type!')
     assert 0 == 1
 #%%
-base_model = K.applications.ResNet50(input_shape=[32, 32, 3], include_top=False)
-
-# base_model.summary()
-
-layer_names = [
-    'conv1_relu',   # 16x16x64
-    'conv2_block3_out',   # 8x8x256
-    'conv3_block4_out',   # 4x4x512
-    'conv4_block6_out',   # 2x2x1024
-    'conv5_block3_out',   # 1x1x2048
-]
-layers = [base_model.get_layer(name).output for name in layer_names]
-
-down_stack = K.Model(inputs=base_model.input, outputs=layers)
-
-down_stack.trainable = True
+step = 0
+betas = tf.linspace(PARAMS['beta_start'],
+                    PARAMS['beta_end'],
+                    PARAMS['T'])
+progress_bar = tqdm(range(PARAMS['epochs']))
+progress_bar.set_description('iteration {}/{} | current loss ?'.format(step, PARAMS['epochs']))
 #%%
-from tensorflow_examples.models.pix2pix import pix2pix
-
-up_stack = [
-    pix2pix.upsample(2048, 3),    
-    pix2pix.upsample(1024, 3),  
-    pix2pix.upsample(512, 3),  
-    pix2pix.upsample(256, 3),  
-    pix2pix.upsample(64, 3),   
-    pix2pix.upsample(64, 3),   
-]
+alphas = 1. - betas
+alphas_cumprod_sqrt = np.sqrt(np.cumprod(alphas, axis=0))
+alphas_cumprod_one_minus_sqrt = np.sqrt(1 - np.cumprod(alphas, axis=0))
 #%%
-def unet_model(output_channels, activation=tf.nn.elu):
-    inputs = K.layers.Input(shape=[32, 32, 3])
-    x = inputs
-
-    skips = down_stack(x)
-    x = skips[-1]
-    skips = reversed(skips[:-1])
-
-    for up, skip in zip(up_stack[:-1], skips):
-        x = up(x)
-        concat = tf.keras.layers.Concatenate()
-        x = concat([x, skip])
-    x = up_stack[-1](x)
-    x = concat([x, inputs])
-
-    last1 = K.layers.Conv2D(32, 3, activation=activation, padding='same')  
-    last2 = K.layers.Conv2D(output_channels, 3, padding='same')  
-
-    x = last2(last1(x))
-
-    return K.Model(inputs=inputs, outputs=x)
 #%%
-model = unet_model(PARAMS['channel'])
-model.summary()
+model = models.Unet(PARAMS, PARAMS['embedding_dim'], PARAMS['channel'], dropout=0., embedding_dim_mult=(1, 2, 4, 8), num_res_blocks=3, attn_resolutions=(16, ), resamp_with_conv=True)
+optimizer = K.optimizers.Adam(learning_rate=PARAMS['learning_rate'])
+mse = K.losses.MeanSquaredError()
+
+# tf decorator 필요
+def train_one_step(PARAMS, optimizer, x_batch_perturbed, epsilon, timesteps):
+    with tf.GradientTape() as tape:
+        pred = model(x_batch_perturbed, timesteps)
+        loss = mse(epsilon, pred)
+        gradients = tape.gradient(loss, model.trainable_variables)
+    optimizer.apply_gradients(zip(gradients, model.trainable_variables))
+    return loss
+#%%
+'''training'''
+loss_history = []
+for _ in progress_bar:
+    x_batch = next(iter(train_dataset))
+    step += 1
+    
+    # sampling timestep
+    timesteps = tf.random.uniform([x_batch.shape[0]], 
+                                    minval=0,
+                                    maxval=PARAMS['T'],
+                                    dtype=tf.dtypes.int32)
+    x0_weights = tf.gather(alphas_cumprod_sqrt, timesteps)
+    epsilon_weights = tf.gather(alphas_cumprod_one_minus_sqrt, timesteps)
+    epsilon = tf.random.normal(shape=x_batch.shape)
+    x_batch_perturbed = x0_weights[:, tf.newaxis, tf.newaxis, tf.newaxis] * x_batch + epsilon_weights[:, tf.newaxis, tf.newaxis, tf.newaxis] * epsilon # reparmetrization trick
+    
+    current_loss = train_one_step(PARAMS, optimizer, x_batch_perturbed, epsilon, timesteps)
+    loss_history.append(current_loss.numpy())
+    
+    progress_bar.set_description('setting: {} epochs:{} lr:{} dim:{} T:{} beta:{} to {} | iteration {}/{} | current loss {:.3f}'.format(
+        PARAMS['data'], PARAMS['epochs'], PARAMS['learning_rate'], PARAMS['embedding_dim'], PARAMS['T'], PARAMS['beta_start'], PARAMS['beta_end'], 
+        step, PARAMS['epochs'], current_loss
+    ))
+
+    if step == PARAMS['epochs']: break
 #%%

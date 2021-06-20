@@ -17,8 +17,8 @@ import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
 import os
-# os.chdir(r'D:/generative/ddpm')
-os.chdir('/Users/anseunghwan/Documents/GitHub/generative/ddpm')
+os.chdir(r'D:/generative/ddpm')
+# os.chdir('/Users/anseunghwan/Documents/GitHub/generative/ddpm')
 
 from modules import models
 #%%

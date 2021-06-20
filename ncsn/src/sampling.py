@@ -18,21 +18,21 @@ import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
 import os
-os.chdir(r'D:/generative/ncsn')
-# os.chdir('/Users/anseunghwan/Documents/GitHub/generative/ncsn')
+# os.chdir(r'D:/generative/ncsn')
+os.chdir('/Users/anseunghwan/Documents/GitHub/generative/ncsn')
 
 from modules import ncsn_models
 #%%
 PARAMS = {
     "batch_size": 128,
-    "epochs": 10000, # 200000
-    "learning_rate": 0.00005, 
-    "data": "cifar10", # or "mnist"
-    "num_L": 232,
-    "sigma_high": 50.0,
+    "epochs": 200000, 
+    "learning_rate": 0.00001, 
+    "data": "mnist", 
+    "num_L": 200,
+    "sigma_high": 20.0,
     "sigma_low": 0.1,
-    "T": 10,
-    "epsilon": 0.001
+    "T": 5,
+    "epsilon": 0.000001
 }
 #%%
 if PARAMS['data'] == "cifar10":
@@ -71,92 +71,17 @@ else:
     print('Invalid data type!')
     assert 0 == 1
 #%%
-model = ncsn_models.build_refinenet(PARAMS, activation=tf.nn.elu)
-# model = ncsn_models.build_unet(PARAMS)
-optimizer = K.optimizers.Adam(learning_rate=PARAMS['learning_rate'])
-
-step = 0
 # geometric sequence of sigma
 sigma_levels = tf.math.exp(tf.linspace(tf.math.log(PARAMS['sigma_high']),
                                         tf.math.log(PARAMS['sigma_low']),
                                         PARAMS['num_L']))
-progress_bar = tqdm(range(PARAMS['epochs']))
-progress_bar.set_description('iteration {}/{} | current loss ?'.format(step, PARAMS['epochs']))
 #%%
-@tf.function
-def dsm_loss(score, x_perturbed, x, sigmas):
-    '''
-    scaled loss of denoising score matching:
-    \lambda(\sigma) * Fisher information
-    = \sigma^2 * Fisher information
-    '''
-    target = (x_perturbed - x) / (tf.square(sigmas))
-    loss = tf.square(sigmas) * 0.5 * tf.reduce_sum(tf.square(score + target), axis=[1,2,3], keepdims=True)
-    loss = tf.reduce_mean(loss)
-    return loss
-
-@tf.function
-def train_one_step(model, optimizer, x_batch_perturbed, x_batch, idx_sigmas, sigmas):
-    with tf.GradientTape() as tape:
-        # scores = model([x_batch_perturbed, idx_sigmas])
-        '''Technique 3. Noise conditioning'''
-        scores = model(x_batch_perturbed) / sigmas
-        current_loss = dsm_loss(scores, x_batch_perturbed, x_batch, sigmas)
-        gradients = tape.gradient(current_loss, model.trainable_variables)
-    optimizer.apply_gradients(zip(gradients, model.trainable_variables))
-    return current_loss
-#%%
-'''training'''
-loss_history = []
-for _ in progress_bar:
-    x_batch = next(iter(train_dataset))
-    step += 1
-    
-    # sampling sigma
-    idx_sigmas = tf.random.uniform([x_batch.shape[0]], 
-                                    minval=0,
-                                    maxval=PARAMS['num_L'],
-                                    dtype=tf.dtypes.int32)
-    sigmas = tf.gather(sigma_levels, idx_sigmas)
-    sigmas = tf.reshape(sigmas, shape=(x_batch.shape[0], 1, 1, 1))
-    x_batch_perturbed = x_batch + tf.random.normal(shape=x_batch.shape) * sigmas # reparmetrization trick
-    
-    current_loss = train_one_step(model, optimizer, x_batch_perturbed, x_batch, idx_sigmas, sigmas)
-    loss_history.append(current_loss.numpy())
-
-    progress_bar.set_description('setting: {} epochs:{} lr:{} L:{} sigma:{} to {} | iteration {}/{} | current loss {:.3f}'.format(
-        PARAMS['data'], PARAMS['epochs'], PARAMS['learning_rate'], PARAMS['num_L'], PARAMS['sigma_high'], PARAMS['sigma_low'], 
-        step, PARAMS['epochs'], 
-        current_loss
-    ))
-
-    if step == PARAMS['epochs']: break
-#%%
-fig, ax = plt.subplots(figsize=(9, 4))
-ax.plot(loss_history)
-ax.set_title('loss')
-plt.savefig('./assets/loss_{}_{}_{}_{}_{}.png'.format(PARAMS['data'], 
-                                                        PARAMS['learning_rate'], 
-                                                        PARAMS['num_L'],
-                                                        PARAMS['sigma_high'],
-                                                        PARAMS['sigma_low']))
-# plt.show()
-plt.close()
-#%%
-model.save_weights('./assets/{}/weights_{}_{}_{}_{}_{}/weights'.format(PARAMS['data'],
-                                                                    PARAMS['data'], 
-                                                                    PARAMS['learning_rate'], 
-                                                                    PARAMS['num_L'],
-                                                                    PARAMS['sigma_high'],
-                                                                    PARAMS['sigma_low']))
-#%%
-# model = ncsn_models.build_refinenet(PARAMS)
-# model.load_weights('./assets/{}/weights_{}_{}_{}_{}_{}/weights'.format(PARAMS['data'], 
-#                                                                     PARAMS['data'],
-#                                                                     PARAMS['learning_rate'], 
-#                                                                     PARAMS['num_L'],
-#                                                                     PARAMS['sigma_high'],
-#                                                                     PARAMS['sigma_low']))
+model = ncsn_models.build_refinenet(PARAMS)
+model.load_weights('/Users/anseunghwan/Documents/GitHub/generative_save/weights/weights_{}_{}_{}_{}_{}/weights'.format(PARAMS['data'], 
+                                                                                                                        PARAMS['learning_rate'], 
+                                                                                                                        PARAMS['num_L'],
+                                                                                                                        PARAMS['sigma_high'],
+                                                                                                                        PARAMS['sigma_low']))
 #%%
 @tf.function
 def langevin_dynamics(scorenet, x, sigma_i=None, alpha=0.1, T=1000):
@@ -170,13 +95,15 @@ def langevin_dynamics(scorenet, x, sigma_i=None, alpha=0.1, T=1000):
 def annealed_langevin_dynamics(scorenet, x, sigma_levels, T=100, eps=0.1, intermediate=False):
     if intermediate:
         x_list = []
-        for sigma_i in sigma_levels:
+        for i in tqdm(range(len(sigma_levels))):
+            sigma_i = sigma_levels[i]
             alpha_i = eps * (sigma_i ** 2) / (sigma_levels[-1] ** 2) # step size
             x = langevin_dynamics(scorenet, x, sigma_i=sigma_i, alpha=alpha_i, T=T) # Langevin dynamics
             x_list.append(x)
         return x_list
     else:
-        for sigma_i in sigma_levels:
+        for i in tqdm(range(len(sigma_levels))):
+            sigma_i = sigma_levels[i]
             alpha_i = eps * (sigma_i ** 2) / (sigma_levels[-1] ** 2) # step size
             x = langevin_dynamics(scorenet, x, sigma_i=sigma_i, alpha=alpha_i, T=T) # Langevin dynamics
         return x

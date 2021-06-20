@@ -5,17 +5,14 @@ from tensorflow.keras import layers
 
 import tensorflow_addons as tfa
 #%%
-@tf.function
 def nonlinearity(x):
       return tf.nn.swish(x)
 #%%
-@tf.function
 def normalize(x):
   return tfa.layers.GroupNormalization(1)(x)
 #%%
-@tf.function
 def upsample(x, with_conv):
-    B, H, W, C = tf.shape(x)
+    B, H, W, C = x.shape
     x = tf.image.resize(x, size=[H * 2, W * 2], method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
     assert x.shape == [B, H * 2, W * 2, C]
     if with_conv:
@@ -23,7 +20,6 @@ def upsample(x, with_conv):
         assert x.shape == [B, H * 2, W * 2, C]
     return x
 #%%
-@tf.function
 def downsample(x, with_conv):
     B, H, W, C = x.shape
     if with_conv:
@@ -33,7 +29,6 @@ def downsample(x, with_conv):
     assert x.shape == [B, H // 2, W // 2, C]
     return x
 #%%
-@tf.function
 def get_timestep_embedding(timesteps, embedding_dim):
     """ 
     From Fairseq.
@@ -50,12 +45,11 @@ def get_timestep_embedding(timesteps, embedding_dim):
     emb = tf.concat([tf.sin(emb), tf.cos(emb)], axis=1)
     if embedding_dim % 2 == 1:  # zero pad
         emb = tf.pad(emb, [[0, 0], [0, 1]])
-    assert emb.shape == [tf.shape(timesteps)[0], embedding_dim]
+    assert emb.shape == [timesteps.shape[0], embedding_dim]
     return emb
 #%%
-@tf.function
 def resnet_block(x, temb, dropout, out_ch=None, conv_shortcut=False):
-    B, H, W, C = tf.shape(x)
+    B, H, W, C = x.shape
 
     if out_ch is None:
         out_ch = C
@@ -81,9 +75,8 @@ def resnet_block(x, temb, dropout, out_ch=None, conv_shortcut=False):
     assert x.shape == h.shape
     return x + h
 #%%
-@tf.function
 def attn_block(x):
-    B, H, W, C = tf.shape(x)
+    B, H, W, C = x.shape
     h = normalize(x)
     q = layers.Dense(C, name='q')(h)
     k = layers.Dense(C, name='k')(h)
@@ -127,7 +120,7 @@ class Unet(K.models.Model):
         self.conv_out = layers.Conv2D(filters=self.out_ch, kernel_size=3, strides=1, padding='same', name='conv_out')
 
     def call(self, x, timesteps, **kwargs):
-        # B, _, _, _ = tf.shape(x)
+        # B, _, _, _ = x.shape
         B = self.params['batch_size']
         num_resolutions = len(self.embedding_dim_mult)
 
@@ -139,7 +132,6 @@ class Unet(K.models.Model):
 
         '''Downsampling'''
         hs = [self.conv_in(x)]
-        # hs = [nn.conv2d(x, name='conv_in', num_units=ch)]
         for i_level in range(num_resolutions):
             # Residual blocks for this resolution
             for i_block in range(self.num_res_blocks):

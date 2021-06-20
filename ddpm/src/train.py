@@ -17,8 +17,8 @@ import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
 import os
-# os.chdir(r'D:/generative/ddpm')
-os.chdir('/Users/anseunghwan/Documents/GitHub/generative/ddpm')
+os.chdir(r'D:/generative/ddpm')
+# os.chdir('/Users/anseunghwan/Documents/GitHub/generative/ddpm')
 
 from modules import models
 #%%
@@ -84,8 +84,7 @@ model = models.Unet(PARAMS, PARAMS['embedding_dim'], PARAMS['channel'], dropout=
 optimizer = K.optimizers.Adam(learning_rate=PARAMS['learning_rate'])
 mse = K.losses.MeanSquaredError()
 
-@tf.function
-def train_one_step(PARAMS, optimizer, x_batch_perturbed, epsilon, timesteps):
+def train_one_step(optimizer, x_batch_perturbed, epsilon, timesteps):
     with tf.GradientTape() as tape:
         pred = model(x_batch_perturbed, timesteps)
         loss = mse(epsilon, pred)
@@ -109,7 +108,7 @@ for _ in progress_bar:
     epsilon = tf.random.normal(shape=x_batch.shape)
     x_batch_perturbed = x0_weights[:, tf.newaxis, tf.newaxis, tf.newaxis] * x_batch + epsilon_weights[:, tf.newaxis, tf.newaxis, tf.newaxis] * epsilon # reparmetrization trick
     
-    current_loss = train_one_step(PARAMS, optimizer, x_batch_perturbed, epsilon, timesteps)
+    current_loss = train_one_step(optimizer, x_batch_perturbed, epsilon, timesteps)
     loss_history.append(current_loss.numpy())
     
     progress_bar.set_description('setting: {} epochs:{} lr:{} dim:{} T:{} beta:{} to {} | iteration {}/{} | current loss {:.3f}'.format(

@@ -25,14 +25,14 @@ from modules import ncsn_models
 #%%
 PARAMS = {
     "batch_size": 128,
-    "epochs": 10000, # 200000
-    "learning_rate": 0.00005, 
+    "epochs": 200000, 
+    "learning_rate": 0.00001, 
     "data": "cifar10", # or "mnist"
     "num_L": 232,
     "sigma_high": 50.0,
     "sigma_low": 0.1,
-    "T": 10,
-    "epsilon": 0.001
+    "T": 100,
+    "epsilon": 0.000006
 }
 #%%
 if PARAMS['data'] == "cifar10":
@@ -54,13 +54,13 @@ elif PARAMS['data'] == "mnist":
     (x_train, _), (_, _) = K.datasets.mnist.load_data()
     # '''0 ~ 1 scaling'''
     # x_train = x_train[..., tf.newaxis].astype('float32') / 255.
-    '''-1 ~ +1 scaling'''
-    x_train = (x_train[..., tf.newaxis].astype('float32') - 127.5) / 127.5
     paddings = [[0, 0],
                 [4, 0],
                 [4, 0],
                 [0, 0]]
-    x_train = tf.pad(x_train, paddings, "CONSTANT") # same with CIFAR-10 dataset image size
+    x_train = tf.pad(x_train[..., tf.newaxis], paddings, "CONSTANT") # same with CIFAR-10 dataset image size
+    '''-1 ~ +1 scaling'''
+    x_train = (tf.cast(x_train, 'float32') - 127.5) / 127.5
     PARAMS["data_dim"] = x_train.shape[1]
     train_dataset = tf.data.Dataset.from_tensor_slices((x_train)).shuffle(len(x_train), reshuffle_each_iteration=True).batch(PARAMS['batch_size'])
     

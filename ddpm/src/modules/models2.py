@@ -14,12 +14,12 @@ import tensorflow_addons as tfa
 #   return tfa.layers.GroupNormalization(1)(x)
 #%%
 class Upsampling(layers.Layer):
-    def __init__(self, C, with_conv):
+    def __init__(self, in_ch, with_conv):
         super(Upsampling, self).__init__()
         
-        self.C = C
+        self.in_ch = in_ch
         self.with_conv = with_conv
-        self.conv = layers.Conv2D(filters=self.C, kernel_size=3, strides=1, padding='same', name='conv_up')
+        self.conv = layers.Conv2D(filters=self.in_ch, kernel_size=3, strides=1, padding='same', name='conv_up')
 
     def call(self, x, **kwargs):
         B, H, W, C = x.shape
@@ -31,13 +31,13 @@ class Upsampling(layers.Layer):
         return x    
 #%%
 class Downsampling(layers.Layer):
-    def __init__(self, C, with_conv):
+    def __init__(self, in_ch, with_conv):
         super(Downsampling, self).__init__()
         
-        self.C = C
+        self.in_ch = in_ch
         self.with_conv = with_conv
         if self.with_conv:
-            self.conv = layers.Conv2D(filters=self.C, kernel_size=3, strides=2, padding='same', name='conv_down')
+            self.conv = layers.Conv2D(filters=self.in_ch, kernel_size=3, strides=2, padding='same', name='conv_down')
         else:
             self.avgpool = layers.AveragePooling2D(pool_size=(2, 2), strides=2)
 
@@ -70,16 +70,16 @@ def get_timestep_embedding(timesteps, embedding_dim):
     return emb
 #%%
 class ResnetBlock(layers.Layer):
-    def __init__(self, dropout, C, out_ch=None):
+    def __init__(self, dropout, in_ch, out_ch=None):
         super(ResnetBlock, self).__init__()
         
         self.dropout = dropout
-        self.C = C
+        self.in_ch = in_ch
         self.out_ch = out_ch
         if self.out_ch is None:
-            self.out_ch = self.C
+            self.out_ch = self.in_ch
         
-        if self.out_ch != self.C:
+        if self.out_ch != self.in_ch:
             self.shortcut = layers.Conv2D(filters=self.out_ch, kernel_size=3, strides=1, padding='same', name='conv_shortcut')
         
         # self.nonlinearity = nonlinearity
@@ -102,23 +102,23 @@ class ResnetBlock(layers.Layer):
         h = self.dropout_layer(h)
         h = self.conv2(h)
         
-        if self.out_ch != self.C:
+        if self.out_ch != self.in_ch:
             x = self.shortcut(x)
 
         # assert x.shape == h.shape
         return x + h
 #%%
 class AttentionBlock(layers.Layer):
-    def __init__(self, C):
+    def __init__(self, in_ch):
         super(AttentionBlock, self).__init__()
         
-        self.C = C
+        self.in_ch = in_ch
         self.normalize = tfa.layers.GroupNormalization(1)
-        self.q_layer = layers.Dense(self.C, name='q')
-        self.k_layer = layers.Dense(self.C, name='k')
-        self.v_layer = layers.Dense(self.C, name='v')
+        self.q_layer = layers.Dense(self.in_ch, name='q')
+        self.k_layer = layers.Dense(self.in_ch, name='k')
+        self.v_layer = layers.Dense(self.in_ch, name='v')
         
-        self.proj_out = layers.Dense(self.C, name='proj_out')
+        self.proj_out = layers.Dense(self.in_ch, name='proj_out')
 
     def call(self, x, **kwargs):
         B, H, W, C = x.shape
@@ -127,7 +127,7 @@ class AttentionBlock(layers.Layer):
         k = self.k_layer(h)
         v = self.v_layer(h)
         
-        w = tf.einsum('bhwc,bHWc->bhwHW', q, k) * (int(self.C) ** (-0.5))
+        w = tf.einsum('bhwc,bHWc->bhwHW', q, k) * (int(self.in_ch) ** (-0.5))
         w = tf.reshape(w, [-1, H, W, H * W])
         w = tf.nn.softmax(w, -1)
         w = tf.reshape(w, [-1, H, W, H, W])
@@ -155,31 +155,31 @@ def build_unet(PARAMS, embedding_dim, dropout=0., embedding_dim_mult=(1, 2, 4, 8
     for i_level in range(num_resolutions):
         # Residual blocks for this resolution
         for i_block in range(num_res_blocks):
-            h = ResnetBlock(dropout=dropout, C=hs[-1].shape[-1], out_ch=embedding_dim * embedding_dim_mult[i_level])(hs[-1], temb=temb)
+            h = ResnetBlock(dropout=dropout, in_ch=hs[-1].shape[-1], out_ch=embedding_dim * embedding_dim_mult[i_level])(hs[-1], temb=temb)
             if h.shape[1] in attn_resolutions:
-                h = AttentionBlock(C=h.shape[-1])(h)
+                h = AttentionBlock(in_ch=h.shape[-1])(h)
             hs.append(h)
         # Downsample
         if i_level != num_resolutions - 1:
-            hs.append(Downsampling(C=hs[-1].shape[-1], with_conv=resamp_with_conv)(hs[-1]))
+            hs.append(Downsampling(in_ch=hs[-1].shape[-1], with_conv=resamp_with_conv)(hs[-1]))
 
     '''Middle'''
     h = hs[-1]
-    h = ResnetBlock(dropout=dropout, C=embedding_dim * embedding_dim_mult[-1], out_ch=None)(h, temb=temb)
-    h = AttentionBlock(C=h.shape[-1])(h)
-    h = ResnetBlock(dropout=dropout, C=embedding_dim * embedding_dim_mult[-1], out_ch=None)(h, temb=temb)
+    h = ResnetBlock(dropout=dropout, in_ch=embedding_dim * embedding_dim_mult[-1], out_ch=None)(h, temb=temb)
+    h = AttentionBlock(in_ch=h.shape[-1])(h)
+    h = ResnetBlock(dropout=dropout, in_ch=embedding_dim * embedding_dim_mult[-1], out_ch=None)(h, temb=temb)
     
     '''Upsampling'''
     for i_level in reversed(range(num_resolutions)):
         # Residual blocks for this resolution
         for i_block in range(num_res_blocks + 1):
             h = tf.concat([h, hs.pop()], axis=-1)
-            h = ResnetBlock(dropout=dropout, C=h.shape[-1], out_ch=embedding_dim * embedding_dim_mult[i_level])(h, temb=temb)
+            h = ResnetBlock(dropout=dropout, in_ch=h.shape[-1], out_ch=embedding_dim * embedding_dim_mult[i_level])(h, temb=temb)
             if h.shape[1] in attn_resolutions:
-                h = AttentionBlock(C=h.shape[-1])(h)
+                h = AttentionBlock(in_ch=h.shape[-1])(h)
         # Upsample
         if i_level != 0:
-            h = Upsampling(C=h.shape[-1], with_conv=resamp_with_conv)(h)
+            h = Upsampling(in_ch=h.shape[-1], with_conv=resamp_with_conv)(h)
             
     '''End'''
     h = tf.nn.swish(tfa.layers.GroupNormalization(1)(h))

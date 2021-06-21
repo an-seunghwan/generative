@@ -17,8 +17,8 @@ import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
 import os
-# os.chdir(r'D:/generative/ddpm')
-os.chdir('/Users/anseunghwan/Documents/GitHub/generative/ddpm')
+os.chdir(r'D:/generative/ddpm')
+# os.chdir('/Users/anseunghwan/Documents/GitHub/generative/ddpm')
 
 from modules import models
 #%%
@@ -122,20 +122,37 @@ for _ in progress_bar:
 
     if step == PARAMS['epochs']: break
 #%%
+model.save_weights('./assets/{}/weights_{}_{}_{}_{}_{}_{}/weights'.format(PARAMS['data'],
+                                                                        PARAMS['data'], 
+                                                                        PARAMS['learning_rate'], 
+                                                                        PARAMS['embedding_dim'],
+                                                                        PARAMS['T'],
+                                                                        PARAMS['beta_start'],
+                                                                        PARAMS['beta_end']))
+#%%
+# model = models.Unet(PARAMS, PARAMS['embedding_dim'], PARAMS['channel'], 
+#                     dropout=0.1, embedding_dim_mult=(1, 2, 4, 8), num_res_blocks=2, attn_resolutions=(16, ), resampling_with_conv=True)
+# model.load_weights('./assets/{}/weights_{}_{}_{}_{}_{}_{}/weights'.format(PARAMS['data'], 
+#                                                                         PARAMS['data'],
+#                                                                         PARAMS['learning_rate'], 
+#                                                                         PARAMS['embedding_dim'],
+#                                                                         PARAMS['T'],
+#                                                                         PARAMS['beta_start'],
+#                                                                         PARAMS['beta_end']))
+#%%
 '''sampling'''
-@tf.function
 def reverse_process(model, PARAMS, B, T=None, intermediate=False):
     x = tf.random.normal(shape=[B, PARAMS['data_dim'], PARAMS['data_dim'], PARAMS['channel']], mean=0, stddev=1)
     if intermediate:
         x_list = []
-        for t in range(T):
+        for t in tqdm(range(T)):
             epsilon = model(x, np.ones((B, )) * t)
             diff = (1 / alphas_sqrt[t]) * (x - (betas[t] / alphas_cumprod_one_minus_sqrt[t]) * epsilon)
             x = diff + sigmas[t] * tf.random.normal(shape=x.get_shape(), mean=0, stddev=1)
             x_list.append(x)
         return x_list
     else:
-        for t in range(T):
+        for t in tqdm(range(T)):
             epsilon = model(x, np.ones((B, )) * t)
             diff = (1 / alphas_sqrt[t]) * (x - (betas[t] / alphas_cumprod_one_minus_sqrt[t]) * epsilon)
             x = diff + sigmas[t] * tf.random.normal(shape=x.get_shape(), mean=0, stddev=1)
@@ -175,22 +192,13 @@ def save_as_grid(images, filename, spacing=2):
     plt.savefig('./assets/{}.png'.format(filename), bbox_inches="tight")
     plt.close()
 #%%
-x = reverse_process(model, PARAMS, B=10, T=PARAMS['T'], intermediate=False)
-
-'''1. generating (intermediate)'''
-B = 10
-intermediate_images = []
+'''1. generating'''
 tf.random.set_seed(520)
-x_init = tf.random.uniform(shape=(B, PARAMS["data_dim"], PARAMS["data_dim"], PARAMS['channel']))
-# x_init = tf.random.normal(shape=(B, PARAMS["data_dim"], PARAMS["data_dim"], PARAMS['channel']))
-intermediate_images.append(x_init)
-intermediate_images += annealed_langevin_dynamics(model, x_init, sigma_levels, T=PARAMS['T'], eps=PARAMS['epsilon'], intermediate=False)
-images = tf.stack(intermediate_images)
-save_as_grid(images, '{}_samples_{}_{}_{}_{}_{}_{}'.format(PARAMS['data'], 
+x = reverse_process(model, PARAMS, B=10, T=PARAMS['T'], intermediate=False)
+save_as_grid(x[None, ...], '{}_samples_{}_{}_{}_{}_{}'.format(PARAMS['data'], 
                                                             PARAMS['learning_rate'], 
-                                                            PARAMS['num_L'],
-                                                            PARAMS['sigma_high'],
-                                                            PARAMS['sigma_low'],
+                                                            PARAMS['embedding_dim'],
                                                             PARAMS['T'],
-                                                            PARAMS['epsilon'],))
+                                                            PARAMS['beta_start'],
+                                                            PARAMS['beta_end']))
 #%%

@@ -6,12 +6,12 @@ import numpy as np
 
 import tensorflow_addons as tfa
 #%%
-def nonlinearity(x):
-  return tf.nn.swish(x)
+# def nonlinearity(x):
+#   return tf.nn.swish(x)
 #%%
-# FIXME
-def normalize(x):
-  return tfa.layers.GroupNormalization(1)(x)
+# # FIXME
+# def normalize(x):
+#   return tfa.layers.GroupNormalization(1)(x)
 #%%
 class Upsampling(layers.Layer):
     def __init__(self, C, with_conv):
@@ -82,8 +82,8 @@ class ResnetBlock(layers.Layer):
         if self.out_ch != self.C:
             self.shortcut = layers.Conv2D(filters=self.out_ch, kernel_size=3, strides=1, padding='same', name='conv_shortcut')
         
-        self.nonlinearity = nonlinearity
-        self.normalize = normalize
+        # self.nonlinearity = nonlinearity
+        self.normalize = tfa.layers.GroupNormalization(1)
         self.conv1 = layers.Conv2D(filters=self.out_ch, kernel_size=3, strides=1, padding='same', name='conv1')
         self.temb_proj = layers.Dense(self.out_ch, name='temb_proj')
         self.dropout_layer = layers.Dropout(rate=self.dropout)
@@ -91,13 +91,13 @@ class ResnetBlock(layers.Layer):
 
     def call(self, x, temb, **kwargs):
         h = x
-        h = self.nonlinearity(self.normalize(h))
+        h = self.tf.nn.swish(self.normalize(h))
         h = self.conv1(h)
 
         # add in timestep embedding
         h += self.temb_proj(self.nonlinearity(temb))[:, None, None, :]
 
-        h = self.nonlinearity(self.normalize(h))
+        h = self.tf.nn.swish(self.normalize(h))
         h = self.dropout_layer(h)
         h = self.conv2(h)
         
@@ -112,7 +112,7 @@ class AttentionBlock(layers.Layer):
         super(AttentionBlock, self).__init__()
         
         self.C = C
-        self.normalize = normalize
+        self.normalize = tfa.layers.GroupNormalization(1)
         self.q_layer = layers.Dense(self.C, name='q')
         self.k_layer = layers.Dense(self.C, name='k')
         self.v_layer = layers.Dense(self.C, name='v')
@@ -146,7 +146,7 @@ def build_unet(PARAMS, embedding_dim, dropout=0., embedding_dim_mult=(1, 2, 4, 8
     '''Timestep embedding'''
     temb = get_timestep_embedding(timesteps, embedding_dim)
     temb = layers.Dense(embedding_dim * 4, name='dense0')(temb)
-    temb = layers.Dense(embedding_dim * 4, name='dense1')(nonlinearity(temb))
+    temb = layers.Dense(embedding_dim * 4, name='dense1')(tf.nn.swish(temb))
     # assert temb.shape == [B, self.embedding_dim * 4]
     
     '''Downsampling'''
@@ -181,7 +181,7 @@ def build_unet(PARAMS, embedding_dim, dropout=0., embedding_dim_mult=(1, 2, 4, 8
             h = Upsampling(C=h.shape[-1], with_conv=resamp_with_conv)(h)
             
     '''End'''
-    h = nonlinearity(normalize(h))
+    h = tf.nn.swish(tfa.layers.GroupNormalization(1)(h))
     h = layers.Conv2D(filters=PARAMS['channel'], kernel_size=3, strides=1, padding='same', name='conv_out')(h)
     # assert h.shape == x.shape[:3] + [self.out_ch]
     

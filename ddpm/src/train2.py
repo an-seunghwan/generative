@@ -24,10 +24,10 @@ from modules import models2
 #%%
 PARAMS = {
     "batch_size": 128,
-    "epochs": 10000, 
-    "learning_rate": 0.0002, 
+    "epochs": 100000, 
+    "learning_rate": 0.0001, 
     "data": "mnist", # or "mnist"
-    "embedding_dim": 32, 
+    "embedding_dim": 64, 
     "T": 1000,
     "beta_start": 0.0001,
     "beta_end": 0.02,
@@ -91,7 +91,7 @@ mse = K.losses.MeanSquaredError()
 def train_one_step(optimizer, x_batch_perturbed, epsilon, timesteps):
     with tf.GradientTape() as tape:
         pred = model([x_batch_perturbed, timesteps])
-        loss = mse(epsilon, pred)
+        loss = tf.reduce_mean(tf.reduce_sum(pred - epsilon, axis=[1,2,3]))
         gradients = tape.gradient(loss, model.trainable_variables)
     optimizer.apply_gradients(zip(gradients, model.trainable_variables))
     return loss

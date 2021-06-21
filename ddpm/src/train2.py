@@ -17,14 +17,14 @@ import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
 import os
-# os.chdir(r'D:/generative/ddpm')
-os.chdir('/Users/anseunghwan/Documents/GitHub/generative/ddpm')
+os.chdir(r'D:/generative/ddpm')
+# os.chdir('/Users/anseunghwan/Documents/GitHub/generative/ddpm')
 
-from modules import models
+from modules import models2
 #%%
 PARAMS = {
     "batch_size": 128,
-    "epochs": 100000, 
+    "epochs": 10, 
     "learning_rate": 0.0002, 
     "data": "mnist", # or "mnist"
     "embedding_dim": 32, 
@@ -83,14 +83,13 @@ alphas_sqrt = np.sqrt(alphas)
 alphas_cumprod_sqrt = np.sqrt(np.cumprod(alphas, axis=0))
 alphas_cumprod_one_minus_sqrt = np.sqrt(1 - np.cumprod(alphas, axis=0))
 #%%
-model = models.Unet(PARAMS, PARAMS['embedding_dim'], PARAMS['channel'], 
-                    dropout=0.1, embedding_dim_mult=(1, 2, 4, 8), num_res_blocks=2, attn_resolutions=(16, ), resampling_with_conv=True)
+model = models2.build_unet(PARAMS, PARAMS['embedding_dim'], dropout=0., embedding_dim_mult=(1, 2, 4, 8), num_res_blocks=2, attn_resolutions=(16, ), resamp_with_conv=True)
 optimizer = K.optimizers.Adam(learning_rate=PARAMS['learning_rate'])
 mse = K.losses.MeanSquaredError()
 
 def train_one_step(optimizer, x_batch_perturbed, epsilon, timesteps):
     with tf.GradientTape() as tape:
-        pred = model(x_batch_perturbed, timesteps)
+        pred = model([x_batch_perturbed, timesteps])
         loss = mse(epsilon, pred)
         gradients = tape.gradient(loss, model.trainable_variables)
     optimizer.apply_gradients(zip(gradients, model.trainable_variables))
@@ -146,14 +145,14 @@ def reverse_process(model, PARAMS, B, T=None, intermediate=False):
     if intermediate:
         x_list = []
         for t in tqdm(range(T)):
-            epsilon = model(x, np.ones((B, )) * t)
+            epsilon = model([x, np.ones((B, )) * t])
             diff = (1 / alphas_sqrt[t]) * (x - (betas[t] / alphas_cumprod_one_minus_sqrt[t]) * epsilon)
             x = diff + sigmas[t] * tf.random.normal(shape=x.get_shape(), mean=0, stddev=1)
             x_list.append(x)
         return x_list
     else:
         for t in tqdm(range(T)):
-            epsilon = model(x, np.ones((B, )) * t)
+            epsilon = model([x, np.ones((B, )) * t])
             diff = (1 / alphas_sqrt[t]) * (x - (betas[t] / alphas_cumprod_one_minus_sqrt[t]) * epsilon)
             x = diff + sigmas[t] * tf.random.normal(shape=x.get_shape(), mean=0, stddev=1)
         return x

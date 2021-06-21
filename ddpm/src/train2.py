@@ -24,7 +24,7 @@ from modules import models2
 #%%
 PARAMS = {
     "batch_size": 128,
-    "epochs": 10, 
+    "epochs": 10000, 
     "learning_rate": 0.0002, 
     "data": "mnist", # or "mnist"
     "embedding_dim": 32, 
@@ -130,8 +130,7 @@ model.save_weights('./assets/{}/weights_{}_{}_{}_{}_{}_{}/weights'.format(PARAMS
                                                                         PARAMS['beta_start'],
                                                                         PARAMS['beta_end']))
 #%%
-# model = models.Unet(PARAMS, PARAMS['embedding_dim'], PARAMS['channel'], 
-#                     dropout=0.1, embedding_dim_mult=(1, 2, 4, 8), num_res_blocks=2, attn_resolutions=(16, ), resampling_with_conv=True)
+# model = models2.build_unet(PARAMS, PARAMS['embedding_dim'], dropout=0., embedding_dim_mult=(1, 2, 4, 8), num_res_blocks=2, attn_resolutions=(16, ), resamp_with_conv=True)
 # model.load_weights('./assets/{}/weights_{}_{}_{}_{}_{}_{}/weights'.format(PARAMS['data'], 
 #                                                                         PARAMS['data'],
 #                                                                         PARAMS['learning_rate'], 

@@ -83,7 +83,8 @@ class ResnetBlock(layers.Layer):
             self.shortcut = layers.Conv2D(filters=self.out_ch, kernel_size=3, strides=1, padding='same', name='conv_shortcut')
         
         # self.nonlinearity = nonlinearity
-        self.normalize = tfa.layers.GroupNormalization(1)
+        self.normalize1 = tfa.layers.GroupNormalization(1)
+        self.normalize2 = tfa.layers.GroupNormalization(1)
         self.conv1 = layers.Conv2D(filters=self.out_ch, kernel_size=3, strides=1, padding='same', name='conv1')
         self.temb_proj = layers.Dense(self.out_ch, name='temb_proj')
         self.dropout_layer = layers.Dropout(rate=self.dropout)
@@ -91,13 +92,13 @@ class ResnetBlock(layers.Layer):
 
     def call(self, x, temb, **kwargs):
         h = x
-        h = self.tf.nn.swish(self.normalize(h))
+        h = tf.nn.swish(self.normalize1(h))
         h = self.conv1(h)
 
         # add in timestep embedding
-        h += self.temb_proj(self.nonlinearity(temb))[:, None, None, :]
+        h += self.temb_proj(tf.nn.swish(temb))[:, None, None, :]
 
-        h = self.tf.nn.swish(self.normalize(h))
+        h = tf.nn.swish(self.normalize2(h))
         h = self.dropout_layer(h)
         h = self.conv2(h)
         

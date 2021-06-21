@@ -87,6 +87,7 @@ model = models2.build_unet(PARAMS, PARAMS['embedding_dim'], dropout=0., embeddin
 optimizer = K.optimizers.Adam(learning_rate=PARAMS['learning_rate'])
 mse = K.losses.MeanSquaredError()
 
+@ tf.function
 def train_one_step(optimizer, x_batch_perturbed, epsilon, timesteps):
     with tf.GradientTape() as tape:
         pred = model([x_batch_perturbed, timesteps])

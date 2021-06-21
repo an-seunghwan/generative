@@ -17,17 +17,17 @@ import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
 import os
-os.chdir(r'D:/generative/ddpm')
-# os.chdir('/Users/anseunghwan/Documents/GitHub/generative/ddpm')
+# os.chdir(r'D:/generative/ddpm')
+os.chdir('/Users/anseunghwan/Documents/GitHub/generative/ddpm')
 
 from modules import models
 #%%
 PARAMS = {
     "batch_size": 128,
-    "epochs": 10000, # 200000
-    "learning_rate": 0.0001, 
+    "epochs": 100000, 
+    "learning_rate": 0.0002, 
     "data": "mnist", # or "mnist"
-    "embedding_dim": 16, 
+    "embedding_dim": 32, 
     "T": 1000,
     "beta_start": 0.0001,
     "beta_end": 0.02,
@@ -76,11 +76,15 @@ betas = tf.linspace(PARAMS['beta_start'],
 progress_bar = tqdm(range(PARAMS['epochs']))
 progress_bar.set_description('iteration {}/{} | current loss ?'.format(step, PARAMS['epochs']))
 #%%
+'''q(x_t|x_0)'''
+sigmas = np.sqrt(betas)
 alphas = 1. - betas
+alphas_sqrt = np.sqrt(alphas)
 alphas_cumprod_sqrt = np.sqrt(np.cumprod(alphas, axis=0))
 alphas_cumprod_one_minus_sqrt = np.sqrt(1 - np.cumprod(alphas, axis=0))
 #%%
-model = models.Unet(PARAMS, PARAMS['embedding_dim'], PARAMS['channel'], dropout=0., embedding_dim_mult=(1, 2, 4, 8), num_res_blocks=3, attn_resolutions=(16, ), resamp_with_conv=True)
+model = models.Unet(PARAMS, PARAMS['embedding_dim'], PARAMS['channel'], 
+                    dropout=0.1, embedding_dim_mult=(1, 2, 4, 8), num_res_blocks=2, attn_resolutions=(16, ), resampling_with_conv=True)
 optimizer = K.optimizers.Adam(learning_rate=PARAMS['learning_rate'])
 mse = K.losses.MeanSquaredError()
 
@@ -117,4 +121,76 @@ for _ in progress_bar:
     ))
 
     if step == PARAMS['epochs']: break
+#%%
+'''sampling'''
+@tf.function
+def reverse_process(model, PARAMS, B, T=None, intermediate=False):
+    x = tf.random.normal(shape=[B, PARAMS['data_dim'], PARAMS['data_dim'], PARAMS['channel']], mean=0, stddev=1)
+    if intermediate:
+        x_list = []
+        for t in range(T):
+            epsilon = model(x, np.ones((B, )) * t)
+            diff = (1 / alphas_sqrt[t]) * (x - (betas[t] / alphas_cumprod_one_minus_sqrt[t]) * epsilon)
+            x = diff + sigmas[t] * tf.random.normal(shape=x.get_shape(), mean=0, stddev=1)
+            x_list.append(x)
+        return x_list
+    else:
+        for t in range(T):
+            epsilon = model(x, np.ones((B, )) * t)
+            diff = (1 / alphas_sqrt[t]) * (x - (betas[t] / alphas_cumprod_one_minus_sqrt[t]) * epsilon)
+            x = diff + sigmas[t] * tf.random.normal(shape=x.get_shape(), mean=0, stddev=1)
+        return x
+#%%
+@tf.function
+def preprocess_image_to_save(x):
+    x = tf.clip_by_value(x, 0, 1)
+    x = x * 255
+    x = x + 0.5
+    x = tf.clip_by_value(x, 0, 255)
+    return x
+
+def save_as_grid(images, filename, spacing=2):
+    """
+    Partially from https://stackoverflow.com/questions/42040747/more-idiomatic-way-to-display-images-in-a-grid-with-numpy
+    :param images:
+    :return:
+    """
+    # Define grid dimensions
+    cols, rows, height, width, channels = images.shape
+
+    # Process image (clip values 0 ~ 1)
+    images = preprocess_image_to_save(images)
+
+    # Init image
+    grid_cols = rows * height + (rows + 1) * spacing
+    grid_rows = cols * width + (cols + 1) * spacing
+    im = Image.new(PARAMS['mode'], (grid_rows, grid_cols))
+    for row in range(rows):
+        for col in range(cols):
+            x = col * height + (1 + col) * spacing
+            y = row * width + (1 + row) * spacing
+            im.paste(tf.keras.preprocessing.image.array_to_img(images[col, row]), (x, y))
+    plt.axis('off')
+    plt.imshow(im)
+    plt.savefig('./assets/{}.png'.format(filename), bbox_inches="tight")
+    plt.close()
+#%%
+x = reverse_process(model, PARAMS, B=10, T=PARAMS['T'], intermediate=False)
+
+'''1. generating (intermediate)'''
+B = 10
+intermediate_images = []
+tf.random.set_seed(520)
+x_init = tf.random.uniform(shape=(B, PARAMS["data_dim"], PARAMS["data_dim"], PARAMS['channel']))
+# x_init = tf.random.normal(shape=(B, PARAMS["data_dim"], PARAMS["data_dim"], PARAMS['channel']))
+intermediate_images.append(x_init)
+intermediate_images += annealed_langevin_dynamics(model, x_init, sigma_levels, T=PARAMS['T'], eps=PARAMS['epsilon'], intermediate=False)
+images = tf.stack(intermediate_images)
+save_as_grid(images, '{}_samples_{}_{}_{}_{}_{}_{}'.format(PARAMS['data'], 
+                                                            PARAMS['learning_rate'], 
+                                                            PARAMS['num_L'],
+                                                            PARAMS['sigma_high'],
+                                                            PARAMS['sigma_low'],
+                                                            PARAMS['T'],
+                                                            PARAMS['epsilon'],))
 #%%

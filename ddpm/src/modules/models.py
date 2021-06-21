@@ -55,7 +55,6 @@ def resnet_block(x, temb, dropout, out_ch=None, conv_shortcut=False):
         out_ch = C
 
     h = x
-
     h = nonlinearity(normalize(h))
     h = layers.Conv2D(filters=out_ch, kernel_size=3, strides=1, padding='same', name='conv1')(h)
 
@@ -75,7 +74,7 @@ def resnet_block(x, temb, dropout, out_ch=None, conv_shortcut=False):
     assert x.shape == h.shape
     return x + h
 #%%
-def attn_block(x):
+def attention_block(x):
     B, H, W, C = x.shape
     h = normalize(x)
     q = layers.Dense(C, name='q')(h)
@@ -85,33 +84,34 @@ def attn_block(x):
     w = tf.einsum('bhwc,bHWc->bhwHW', q, k) * (int(C) ** (-0.5))
     w = tf.reshape(w, [B, H, W, H * W])
     w = tf.nn.softmax(w, -1)
-    w = tf.reshape(w, [B, H, W, H, W])
+    w = tf.reshape(w, [B, H, W, H, W]) # probabilities for each height*width elements
 
     h = tf.einsum('bhwHW,bHWc->bhwc', w, v)
-    h = layers.Dense(C, name='proj_out')(h)
+    h = layers.Dense(C, name='proj_out')(h) # return to orignal channel dim
 
     assert h.shape == x.shape
     return x + h
 #%%
 class Unet(K.models.Model):
-    def __init__(self, params, embedding_dim, out_ch, dropout=0., embedding_dim_mult=(1, 2, 4, 8), num_res_blocks=3, attn_resolutions=(16, ), resamp_with_conv=True):
+    def __init__(self, params, embedding_dim, out_ch, dropout=0., 
+                 embedding_dim_mult=(1, 2, 4, 8), num_res_blocks=3, attn_resolutions=(16, ), resampling_with_conv=True):
         super(Unet, self).__init__()
         
-        self.params = params
+        self.params = params 
         self.embedding_dim = embedding_dim
-        self.out_ch = out_ch
+        self.out_ch = out_ch # channel of input data
         self.dropout = dropout
-        self.embedding_dim_mult = embedding_dim_mult
-        self.num_res_blocks = num_res_blocks
-        self.attn_resolutions = attn_resolutions
-        self.resamp_with_conv = resamp_with_conv
+        self.embedding_dim_mult = embedding_dim_mult # scale of embedding dimensions
+        self.num_res_blocks = num_res_blocks # the number of residual blocks for each resolution
+        self.attn_resolutions = attn_resolutions # height (or width) which attention block is applied
+        self.resampling_with_conv = resampling_with_conv
         
         self.nonlinearity = nonlinearity
         self.normalize = normalize
         self.upsample = upsample
         self.downsample = downsample
         self.get_timestep_embedding = get_timestep_embedding
-        self.attn_block = attn_block
+        self.attention_block = attention_block
         self.resnet_block = resnet_block
         
         self.dense0 = layers.Dense(self.embedding_dim * 4, name='dense0')
@@ -137,16 +137,16 @@ class Unet(K.models.Model):
             for i_block in range(self.num_res_blocks):
                 h = resnet_block(hs[-1], temb=temb, out_ch=self.embedding_dim * self.embedding_dim_mult[i_level], dropout=self.dropout)
                 if h.shape[1] in self.attn_resolutions:
-                    h = attn_block(h)
+                    h = attention_block(h)
                 hs.append(h)
                 # Downsample
             if i_level != num_resolutions - 1:
-                hs.append(downsample(hs[-1], with_conv=self.resamp_with_conv))
+                hs.append(downsample(hs[-1], with_conv=self.resampling_with_conv))
 
         '''Middle'''
         h = hs[-1]
         h = resnet_block(h, temb=temb, dropout=self.dropout)
-        h = attn_block(h)
+        h = attention_block(h)
         h = resnet_block(h, temb=temb, dropout=self.dropout)
 
         '''Upsampling'''
@@ -155,10 +155,10 @@ class Unet(K.models.Model):
             for i_block in range(self.num_res_blocks + 1):
                 h = resnet_block(tf.concat([h, hs.pop()], axis=-1), temb=temb, out_ch=self.embedding_dim * self.embedding_dim_mult[i_level], dropout=self.dropout)
                 if h.shape[1] in self.attn_resolutions:
-                    h = attn_block(h)
+                    h = attention_block(h)
             # Upsample
             if i_level != 0:
-                h = upsample(h, with_conv=self.resamp_with_conv)
+                h = upsample(h, with_conv=self.resampling_with_conv)
 
         '''End'''
         h = nonlinearity(normalize(h))
@@ -166,4 +166,64 @@ class Unet(K.models.Model):
         # assert h.shape == x.shape[:3] + [self.out_ch]
         
         return h
+#%%
+# def model(x, timesteps, embedding_dim=16, out_ch=3, PARAMS=PARAMS, 
+#         dropout=0., embedding_dim_mult=(1, 2, 4, 8), num_res_blocks=2, attn_resolutions=(16, ), resamp_with_conv=True):
+    
+#     # x = x_batch
+#     # B, _, _, _ = tf.shape(x)
+#     B = PARAMS['batch_size']
+#     num_resolutions = len(embedding_dim_mult)
+
+#     '''Timestep embedding'''
+#     temb = get_timestep_embedding(timesteps, embedding_dim)
+#     temb = layers.Dense(embedding_dim * 4, name='dense0')(temb)
+#     temb = layers.Dense(embedding_dim * 4, name='dense1')(nonlinearity(temb))
+#     assert temb.shape == [B, embedding_dim * 4]
+
+#     '''Downsampling'''
+#     hs = [layers.Conv2D(filters=embedding_dim, kernel_size=3, strides=1, padding='same', name='conv_in')(x)]
+#     for i_level in range(num_resolutions):
+#         # Residual blocks for this resolution
+#         for i_block in range(num_res_blocks):
+#             h = resnet_block(hs[-1], temb=temb, out_ch=embedding_dim * embedding_dim_mult[i_level], dropout=dropout)
+#             if h.shape[1] in attn_resolutions:
+#                 h = attn_block(h)
+#             hs.append(h)
+#             # Downsample
+#         if i_level != num_resolutions - 1:
+#             hs.append(downsample(hs[-1], with_conv=resamp_with_conv))
+
+#     # [a.shape for a in hs]
+
+#     '''Middle'''
+#     h = hs[-1]
+#     h = resnet_block(h, temb=temb, dropout=dropout)
+#     h = attn_block(h)
+#     h = resnet_block(h, temb=temb, dropout=dropout)
+
+#     # a = tf.concat([h, hs.pop()], axis=-1)
+#     # a.shape
+
+#     '''Upsampling'''
+#     for i_level in reversed(range(num_resolutions)):
+#         # Residual blocks for this resolution
+#         for i_block in range(num_res_blocks + 1): # +1 is for downsampled feature matrix
+#             hs_pop = hs.pop()
+#             # print('hs_pop:', hs_pop.shape)
+#             h = resnet_block(tf.concat([h, hs_pop], axis=-1), temb=temb, out_ch=embedding_dim * embedding_dim_mult[i_level], dropout=dropout)
+#             # print('h:', h.shape)
+#             if h.shape[1] in attn_resolutions:
+#                 h = attn_block(h)
+#         # Upsample
+#         if i_level != 0:
+#             h = upsample(h, with_conv=resamp_with_conv)
+#             # print('up h:', h.shape)
+
+#     '''End'''
+#     h = nonlinearity(normalize(h))
+#     h = layers.Conv2D(filters=out_ch, kernel_size=3, strides=1, padding='same', name='conv_out')(h)
+#     assert h.shape == x.shape[:3] + [out_ch]
+    
+#     return h
 #%%

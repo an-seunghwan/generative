@@ -24,9 +24,9 @@ from modules import models2
 #%%
 PARAMS = {
     "batch_size": 128,
-    "epochs": 10000, 
+    "epochs": 300000, 
     "learning_rate": 0.0002, 
-    "data": "mnist", # or "mnist"
+    "data": "mnist", 
     "embedding_dim": 32, 
     "T": 1000,
     "beta_start": 0.0001,
@@ -85,13 +85,12 @@ alphas_cumprod_one_minus_sqrt = np.sqrt(1 - np.cumprod(alphas, axis=0))
 #%%
 model = models2.build_unet(PARAMS, PARAMS['embedding_dim'], dropout=0., embedding_dim_mult=(1, 2, 4, 8), num_res_blocks=2, attn_resolutions=(16, ), resamp_with_conv=True)
 optimizer = K.optimizers.Adam(learning_rate=PARAMS['learning_rate'])
-mse = K.losses.MeanSquaredError()
 
 @ tf.function
 def train_one_step(optimizer, x_batch_perturbed, epsilon, timesteps):
     with tf.GradientTape() as tape:
         pred = model([x_batch_perturbed, timesteps])
-        loss = mse(epsilon, pred)
+        loss = tf.reduce_mean(tf.reduce_sum(tf.square(pred - epsilon), axis=[1,2,3]))
         gradients = tape.gradient(loss, model.trainable_variables)
     optimizer.apply_gradients(zip(gradients, model.trainable_variables))
     return loss
@@ -121,6 +120,18 @@ for _ in progress_bar:
     ))
 
     if step == PARAMS['epochs']: break
+#%%
+fig, ax = plt.subplots(figsize=(9, 4))
+ax.plot(loss_history)
+ax.set_title('loss')
+plt.savefig('./assets/loss_{}_{}_{}_{}_{}_{}.png'.format(PARAMS['data'], 
+                                                        PARAMS['learning_rate'], 
+                                                        PARAMS['embedding_dim'],
+                                                        PARAMS['T'],
+                                                        PARAMS['beta_start'],
+                                                        PARAMS['beta_end']))
+# plt.show()
+plt.close()
 #%%
 model.save_weights('./assets/{}/weights_{}_{}_{}_{}_{}_{}/weights'.format(PARAMS['data'],
                                                                         PARAMS['data'], 

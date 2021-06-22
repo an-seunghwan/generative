@@ -24,9 +24,9 @@ from modules import models2
 #%%
 PARAMS = {
     "batch_size": 128,
-    "epochs": 100000, 
+    "epochs": 300000, 
     "learning_rate": 0.0002, 
-    "data": "mnist", # or "mnist"
+    "data": "mnist", 
     "embedding_dim": 32, 
     "T": 1000,
     "beta_start": 0.0001,
@@ -85,7 +85,6 @@ alphas_cumprod_one_minus_sqrt = np.sqrt(1 - np.cumprod(alphas, axis=0))
 #%%
 model = models2.build_unet(PARAMS, PARAMS['embedding_dim'], dropout=0., embedding_dim_mult=(1, 2, 4, 8), num_res_blocks=2, attn_resolutions=(16, ), resamp_with_conv=True)
 optimizer = K.optimizers.Adam(learning_rate=PARAMS['learning_rate'])
-mse = K.losses.MeanSquaredError()
 
 @ tf.function
 def train_one_step(optimizer, x_batch_perturbed, epsilon, timesteps):

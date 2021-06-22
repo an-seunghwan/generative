@@ -27,7 +27,7 @@ PARAMS = {
     "epochs": 100000, 
     "learning_rate": 0.0002, 
     "data": "mnist", # or "mnist"
-    "embedding_dim": 64, 
+    "embedding_dim": 32, 
     "T": 1000,
     "beta_start": 0.0001,
     "beta_end": 0.02,
@@ -121,6 +121,18 @@ for _ in progress_bar:
     ))
 
     if step == PARAMS['epochs']: break
+#%%
+fig, ax = plt.subplots(figsize=(9, 4))
+ax.plot(loss_history)
+ax.set_title('loss')
+plt.savefig('./assets/loss_{}_{}_{}_{}_{}_{}.png'.format(PARAMS['data'], 
+                                                        PARAMS['learning_rate'], 
+                                                        PARAMS['embedding_dim'],
+                                                        PARAMS['T'],
+                                                        PARAMS['beta_start'],
+                                                        PARAMS['beta_end']))
+# plt.show()
+plt.close()
 #%%
 model.save_weights('./assets/{}/weights_{}_{}_{}_{}_{}_{}/weights'.format(PARAMS['data'],
                                                                         PARAMS['data'], 

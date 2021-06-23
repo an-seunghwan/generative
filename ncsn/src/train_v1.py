@@ -17,8 +17,7 @@ import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
 import os
-# os.chdir(r'D:/generative/ncsn')
-os.chdir('/Users/anseunghwan/Documents/GitHub/generative/ncsn')
+os.chdir('/home1/prof/jeon/an/generative/ncsn')
 
 from modules import ncsn_models_v1
 #%%
@@ -26,10 +25,11 @@ PARAMS = {
     "batch_size": 128,
     "epochs": 200000, 
     "learning_rate": 0.001, 
-    "data": "cifar10", # or "mnist"
+    "data": "mnist", 
+    # "data": "cifar10", 
     "num_L": 10,
     "sigma_high": 1.0,
-    "sigma_low": 0.1,
+    "sigma_low": 0.01,
     "T": 100,
     "epsilon": 0.00002
 }
@@ -157,7 +157,7 @@ model.save_weights('./assets/{}/weights_v1_{}_{}_{}_{}_{}/weights'.format(PARAMS
 @tf.function
 def langevin_dynamics(scorenet, x, sigma_i=None, alpha=0.1, T=1000):
     for _ in range(T):
-        score = scorenet([x, sigma_i])
+        score = scorenet([x, tf.tile(tf.reshape(sigma_i, (1, 1)), (x.shape[0], 1))])
         noise = tf.random.normal(shape=x.get_shape(), mean=0, stddev=1)
         x = x + (alpha / 2) * score + tf.sqrt(alpha) * noise
     return x
@@ -219,8 +219,8 @@ def save_as_grid(images, filename, spacing=2):
 B = 10
 intermediate_images = []
 tf.random.set_seed(520)
-x_init = tf.random.uniform(shape=(B, PARAMS["data_dim"], PARAMS["data_dim"], PARAMS['channel']))
-# x_init = tf.random.normal(shape=(B, PARAMS["data_dim"], PARAMS["data_dim"], PARAMS['channel']))
+# x_init = tf.random.uniform(shape=(B, PARAMS["data_dim"], PARAMS["data_dim"], PARAMS['channel']))
+x_init = tf.random.normal(shape=(B, PARAMS["data_dim"], PARAMS["data_dim"], PARAMS['channel']))
 intermediate_images.append(x_init)
 intermediate_images += annealed_langevin_dynamics(model, x_init, sigma_levels, T=PARAMS['T'], eps=PARAMS['epsilon'], intermediate=False)
 images = tf.stack(intermediate_images)

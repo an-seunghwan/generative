@@ -155,14 +155,14 @@ def reverse_process(model, PARAMS, B, T=None, intermediate=False):
     x = tf.random.normal(shape=[B, PARAMS['data_dim'], PARAMS['data_dim'], PARAMS['channel']], mean=0, stddev=1)
     if intermediate:
         x_list = []
-        for t in tqdm(range(T)):
+        for t in tqdm(reversed(range(T))):
             epsilon = model([x, np.ones((B, )) * t])
             diff = (1 / alphas_sqrt[t]) * (x - (betas[t] / alphas_cumprod_one_minus_sqrt[t]) * epsilon)
             x = diff + sigmas[t] * tf.random.normal(shape=x.get_shape(), mean=0, stddev=1)
             x_list.append(x)
         return x_list
     else:
-        for t in tqdm(range(T)):
+        for t in tqdm(reversed(range(T))):
             epsilon = model([x, np.ones((B, )) * t])
             diff = (1 / alphas_sqrt[t]) * (x - (betas[t] / alphas_cumprod_one_minus_sqrt[t]) * epsilon)
             x = diff + sigmas[t] * tf.random.normal(shape=x.get_shape(), mean=0, stddev=1)

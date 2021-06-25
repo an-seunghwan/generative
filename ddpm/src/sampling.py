@@ -150,7 +150,6 @@ def save_as_grid(images, filename, spacing=2):
 '''1. generating'''
 tf.random.set_seed(1)
 x = reverse_process(model, PARAMS, B=10, T=PARAMS['T'], intermediate=True)
-#%%
 save_as_grid(np.array(x), '{}_samples_{}_{}_{}_{}_{}'.format(PARAMS['data'], 
                                                             PARAMS['learning_rate'], 
                                                             PARAMS['embedding_dim'],

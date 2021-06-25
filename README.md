@@ -12,6 +12,9 @@ Implementation codes are written with reference to the following github reposito
 Reproduction of "[Denoising Diffusion Probabilistic Models](https://arxiv.org/abs/2006.11239)" in Tensorflow 2.0.
 Implementation codes are written with reference to the following github repositories:
 - https://github.com/hojonathanho/diffusion
+- result
+    - mnist
+<center><img  src="https://github.com/an-seunghwan/generative/blob/main/ddpm/assets/mnist_samples_0.0002_32_1000_0.0001_0.02.png?raw=true" width="800"  height="250"></center>
 
 <!-- ## 2. Gaussian Process Prior Variational Autoencoders
 - https://github.com/ratschlab/SVGP-VAE -->

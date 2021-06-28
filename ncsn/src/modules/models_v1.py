@@ -1,8 +1,4 @@
 #%%
-'''
-Technique 3. Noise conditioning is used
-'''
-#%%
 import tensorflow as tf
 import tensorflow.keras as K
 from tensorflow.keras import layers

@@ -1,10 +1,15 @@
 #%%
+'''
+Fixed:
+tfa.layers.GroupNormalization(1) -> layers.LayerNormalization()
+'''
+#%%
 import tensorflow as tf
 import tensorflow.keras as K
 from tensorflow.keras import layers
 import numpy as np
 
-import tensorflow_addons as tfa
+# import tensorflow_addons as tfa
 #%%
 # def nonlinearity(x):
 #   return tf.nn.swish(x)
@@ -12,6 +17,7 @@ import tensorflow_addons as tfa
 # # FIXME
 # def normalize(x):
 #   return tfa.layers.GroupNormalization(1)(x)
+#   return layers.LayerNormalization()(x)
 #%%
 class Upsampling(layers.Layer):
     def __init__(self, in_ch, with_conv):
@@ -83,8 +89,10 @@ class ResnetBlock(layers.Layer):
             self.shortcut = layers.Conv2D(filters=self.out_ch, kernel_size=3, strides=1, padding='same', name='conv_shortcut')
         
         # self.nonlinearity = nonlinearity
-        self.normalize1 = tfa.layers.GroupNormalization(1)
-        self.normalize2 = tfa.layers.GroupNormalization(1)
+        # self.normalize1 = tfa.layers.GroupNormalization(1)
+        # self.normalize2 = tfa.layers.GroupNormalization(1)
+        self.normalize1 = layers.LayerNormalization()
+        self.normalize2 = layers.LayerNormalization()
         self.conv1 = layers.Conv2D(filters=self.out_ch, kernel_size=3, strides=1, padding='same', name='conv1')
         self.temb_proj = layers.Dense(self.out_ch, name='temb_proj')
         self.dropout_layer = layers.Dropout(rate=self.dropout)
@@ -113,7 +121,8 @@ class AttentionBlock(layers.Layer):
         super(AttentionBlock, self).__init__()
         
         self.in_ch = in_ch
-        self.normalize = tfa.layers.GroupNormalization(1)
+        # self.normalize = tfa.layers.GroupNormalization(1)
+        self.normalize = layers.LayerNormalization()
         self.q_layer = layers.Dense(self.in_ch, name='q')
         self.k_layer = layers.Dense(self.in_ch, name='k')
         self.v_layer = layers.Dense(self.in_ch, name='v')
@@ -182,7 +191,8 @@ def build_unet(PARAMS, embedding_dim, dropout=0., embedding_dim_mult=(1, 2, 4, 8
             h = Upsampling(in_ch=h.shape[-1], with_conv=resamp_with_conv)(h)
             
     '''End'''
-    h = tf.nn.swish(tfa.layers.GroupNormalization(1)(h))
+    # h = tf.nn.swish(tfa.layers.GroupNormalization(1)(h))
+    h = tf.nn.swish(layers.LayerNormalization()(h))
     h = layers.Conv2D(filters=PARAMS['channel'], kernel_size=3, strides=1, padding='same', name='conv_out')(h)
     # assert h.shape == x.shape[:3] + [self.out_ch]
     

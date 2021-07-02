@@ -17,8 +17,7 @@ import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
 import os
-os.chdir(r'D:/generative/ddpm')
-# os.chdir('/Users/anseunghwan/Documents/GitHub/generative/ddpm')
+os.chdir('/home1/prof/jeon/an/generative/ddpm')
 
 from modules import models2
 #%%
@@ -26,8 +25,7 @@ PARAMS = {
     "batch_size": 128,
     "epochs": 300000, 
     "learning_rate": 0.0001, 
-    "data": "mnist", 
-    # "data": "cifar10", 
+    "data": "cifar10", 
     "embedding_dim": 32, 
     "T": 1000,
     "beta_start": 0.0001,

@@ -89,7 +89,9 @@ progress_bar = tqdm(range(PARAMS['epochs']))
 progress_bar.set_description('iteration {}/{} | current loss ?'.format(step, PARAMS['epochs']))
 #%%
 model = ncsnpp_model.build_unet(PARAMS)
-optimizer = K.optimizers.Adam(learning_rate=PARAMS['learning_rate'])
+optimizer = K.optimizers.Adam(learning_rate=PARAMS['learning_rate'],
+                              epsilon=1e-8,
+                              clipvalue=1.)
 
 @tf.function
 def train_one_step(optimizer, x_batch, x_batch_perturbed, noise, sigmas, timesteps):

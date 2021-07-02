@@ -44,6 +44,7 @@ class Downsampling(layers.Layer):
         # assert x.shape == [B, H // 2, W // 2, C]
         return x
 #%%
+# positional 
 def get_timestep_embedding(timesteps, embedding_dim):
     """ 
     From Fairseq.

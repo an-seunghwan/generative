@@ -18,8 +18,7 @@ import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
 import os
-# os.chdir(r'D:/generative/scorebased_sde')
-os.chdir('/Users/anseunghwan/Documents/GitHub/generative/scorebased_sde')
+os.chdir('/home/jeon/Desktop/an/generative/scorebased_sde')
 
 from modules import ncsnpp_model
 #%%
@@ -43,9 +42,10 @@ PARAMS = {
     'progressive_output':None,
     'progressive_combine':'sum',
     'attention_type':'ddpm',
+    'ema_rate':0.999,
 }
 
-#     model.ema_rate = 0.999
+ 
 #%%
 if PARAMS['data'] == "cifar10":
     classnames = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
@@ -92,15 +92,17 @@ model = ncsnpp_model.build_unet(PARAMS)
 optimizer = K.optimizers.Adam(learning_rate=PARAMS['learning_rate'],
                               epsilon=1e-8,
                               clipvalue=1.)
+ema = tf.train.ExponentialMovingAverage(decay=PARAMS['ema_rate'])
 
 @tf.function
 def train_one_step(optimizer, x_batch, x_batch_perturbed, noise, sigmas, timesteps):
     with tf.GradientTape() as tape:
         score = model([x_batch_perturbed, timesteps])
         target = - noise / sigmas[:, tf.newaxis, tf.newaxis, tf.newaxis] ** 2
-        loss = tf.reduce_mean(tf.reduce_sum(tf.square(score - target), axis=[1,2,3])) * (sigmas ** 2)
+        loss = tf.reduce_mean(tf.reduce_sum(tf.square(score - target), axis=[1,2,3]) * (sigmas ** 2)) 
         gradients = tape.gradient(loss, model.trainable_variables)
     optimizer.apply_gradients(zip(gradients, model.trainable_variables))
+    ema.apply(model.trainable_variables)
     return loss
 #%%
 '''training'''
@@ -165,18 +167,20 @@ def reverse_process(model, PARAMS, B, T=None, intermediate=False):
         x_list = []
         
         for t in tqdm(reversed(range(1, T))):
-            score = model([x, np.ones((B, )) * t])
+            score = model.predict([x, np.ones((B, )) * t])
             x = x + (sigma_levels[t] - sigma_levels[t-1]) * score 
             x = x + np.sqrt(sigma_levels[t-1] * (sigma_levels[t] - sigma_levels[t-1]) / sigma_levels[t]) * tf.random.normal(shape=x.get_shape(), mean=0, stddev=1)
-            x_list.append(x)
+            if (t+1) % 50 == 0:
+                x_list.append(x)
             
         score = model([x, np.zeros((B, ))])
         x = x + sigma_levels[0] * score 
+        x_list.append(x)
         
         return x_list
     else:
         for t in tqdm(reversed(range(1, T))):
-            score = model([x, np.ones((B, )) * t])
+            score = model.predict([x, np.ones((B, )) * t])
             x = x + (sigma_levels[t] - sigma_levels[t-1]) * score 
             x = x + np.sqrt(sigma_levels[t-1] * (sigma_levels[t] - sigma_levels[t-1]) / sigma_levels[t]) * tf.random.normal(shape=x.get_shape(), mean=0, stddev=1)
             
@@ -196,8 +200,6 @@ def preprocess_image_to_save(x):
 def save_as_grid(images, filename, spacing=2):
     """
     Partially from https://stackoverflow.com/questions/42040747/more-idiomatic-way-to-display-images-in-a-grid-with-numpy
-    :param images:
-    :return:
     """
     # Define grid dimensions
     cols, rows, height, width, channels = images.shape
@@ -214,15 +216,19 @@ def save_as_grid(images, filename, spacing=2):
             x = col * height + (1 + col) * spacing
             y = row * width + (1 + row) * spacing
             im.paste(tf.keras.preprocessing.image.array_to_img(images[col, row]), (x, y))
+    plt.figure(figsize = (20, 20))
     plt.axis('off')
-    plt.imshow(im)
+    if PARAMS['channel'] == 1:
+        plt.imshow(im, 'gray')
+    else:
+        plt.imshow(im)
     plt.savefig('./assets/{}.png'.format(filename), bbox_inches="tight")
     plt.close()
 #%%
 '''1. generating'''
 tf.random.set_seed(520)
 x = reverse_process(model, PARAMS, B=10, T=PARAMS['T'], intermediate=True)
-save_as_grid(x[None, ...], '{}_samples_{}_{}_{}_{}_{}'.format(PARAMS['data'], 
+save_as_grid(np.array(x), '{}_samples_{}_{}_{}_{}_{}'.format(PARAMS['data'], 
                                                             PARAMS['learning_rate'], 
                                                             PARAMS['embedding_dim'],
                                                             PARAMS['T'],

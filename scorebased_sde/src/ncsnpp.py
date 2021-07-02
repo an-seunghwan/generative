@@ -45,7 +45,7 @@ PARAMS = {
     'ema_rate':0.999,
 }
 
- 
+print(PARAMS)
 #%%
 if PARAMS['data'] == "cifar10":
     classnames = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']

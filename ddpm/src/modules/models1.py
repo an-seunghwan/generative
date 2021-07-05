@@ -147,7 +147,7 @@ class AttentionBlock(layers.Layer):
         # assert h.shape == x.shape
         return x + h
 #%%
-def build_unet(PARAMS, embedding_dim, dropout=0.1, embedding_dim_mult=(1, 2, 4, 8), num_res_blocks=2, attn_resolutions=(16, ), resamp_with_conv=True):
+def build_unet(PARAMS, embedding_dim, dropout=0., embedding_dim_mult=(1, 2, 4, 8), num_res_blocks=4, attn_resolutions=(16, ), resamp_with_conv=True):
     x = layers.Input((PARAMS['data_dim'], PARAMS['data_dim'], PARAMS['channel']))
     timesteps = layers.Input(())
 

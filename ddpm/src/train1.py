@@ -30,27 +30,7 @@ PARAMS = {
     "T": 1000,
     "beta_start": 0.0001,
     "beta_end": 0.02,
-    
-    "dropout_rate": 0.1,
-    "embedding_dim_mult": (1, 2, 4, 8),
-    "num_res_blocks": 4, 
-    "attn_resolutions": (16, ),
-    "ema_rate": 0.999
 }
-
-# no ema, num_res_blocks = 3 (119943)
-
-print(PARAMS)
-#%%
-'''
-mnist
-- NO dropout
-- number of residual blocks: 2
-
-cifar10
-- dropout with 0.1
-- number of residual blocks: 3
-'''
 #%%
 if PARAMS['data'] == "cifar10":
     classnames = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
@@ -102,15 +82,8 @@ alphas_sqrt = np.sqrt(alphas)
 alphas_cumprod_sqrt = np.sqrt(np.cumprod(alphas, axis=0))
 alphas_cumprod_one_minus_sqrt = np.sqrt(1 - np.cumprod(alphas, axis=0))
 #%%
-model = models2.build_unet(PARAMS, 
-                           PARAMS['embedding_dim'], 
-                           dropout=PARAMS['dropout_rate'], 
-                           embedding_dim_mult=PARAMS['embedding_dim_mult'], 
-                           num_res_blocks=PARAMS['num_res_blocks'], 
-                           attn_resolutions=PARAMS['attn_resolutions'], 
-                           resamp_with_conv=True)
+model = models2.build_unet(PARAMS, PARAMS['embedding_dim'], dropout=0., embedding_dim_mult=(1, 2, 4, 8), num_res_blocks=2, attn_resolutions=(16, ), resamp_with_conv=True)
 optimizer = K.optimizers.Adam(learning_rate=PARAMS['learning_rate'])
-ema = tf.train.ExponentialMovingAverage(decay=PARAMS['ema_rate'])
 
 @tf.function
 def train_one_step(optimizer, x_batch_perturbed, epsilon, timesteps):
@@ -119,7 +92,6 @@ def train_one_step(optimizer, x_batch_perturbed, epsilon, timesteps):
         loss = tf.reduce_mean(tf.reduce_sum(tf.square(pred - epsilon), axis=[1,2,3]))
         gradients = tape.gradient(loss, model.trainable_variables)
     optimizer.apply_gradients(zip(gradients, model.trainable_variables))
-    ema.apply(model.trainable_variables)
     return loss
 #%%
 '''training'''
@@ -168,13 +140,7 @@ model.save_weights('./assets/{}/weights_{}_{}_{}_{}_{}_{}/weights'.format(PARAMS
                                                                         PARAMS['beta_start'],
                                                                         PARAMS['beta_end']))
 #%%
-# model = models2.build_unet(PARAMS, 
-#                            PARAMS['embedding_dim'], 
-#                            dropout=PARAMS['dropout_rate'], 
-#                            embedding_dim_mult=PARAMS['embedding_dim_mult'], 
-#                            num_res_blocks=PARAMS['num_res_blocks'], 
-#                            attn_resolutions=PARAMS['attn_resolutions'], 
-#                            resamp_with_conv=True)
+# model = models2.build_unet(PARAMS, PARAMS['embedding_dim'], dropout=0., embedding_dim_mult=(1, 2, 4, 8), num_res_blocks=2, attn_resolutions=(16, ), resamp_with_conv=True)
 # model.load_weights('./assets/{}/weights_{}_{}_{}_{}_{}_{}/weights'.format(PARAMS['data'], 
 #                                                                         PARAMS['data'],
 #                                                                         PARAMS['learning_rate'], 
@@ -189,7 +155,7 @@ def reverse_process(model, PARAMS, B, T=None, intermediate=False):
     if intermediate:
         x_list = [x]
         for t in tqdm(reversed(range(T))):
-            epsilon = model.predict([x, np.ones((B, )) * t])
+            epsilon = model([x, np.ones((B, )) * t])
             diff = (1 / alphas_sqrt[t]) * (x - (betas[t] / alphas_cumprod_one_minus_sqrt[t]) * epsilon)
             x = diff + sigmas[t] * tf.random.normal(shape=x.get_shape(), mean=0, stddev=1)
             if (t+1) % 50 == 0:
@@ -198,7 +164,7 @@ def reverse_process(model, PARAMS, B, T=None, intermediate=False):
         return x_list
     else:
         for t in tqdm(reversed(range(T))):
-            epsilon = model.predict([x, np.ones((B, )) * t])
+            epsilon = model([x, np.ones((B, )) * t])
             diff = (1 / alphas_sqrt[t]) * (x - (betas[t] / alphas_cumprod_one_minus_sqrt[t]) * epsilon)
             x = diff + sigmas[t] * tf.random.normal(shape=x.get_shape(), mean=0, stddev=1)
         return x
@@ -241,7 +207,7 @@ def save_as_grid(images, filename, spacing=2):
 #%%
 '''1. generating'''
 tf.random.set_seed(11)
-x = reverse_process(model, PARAMS, B=10, T=PARAMS['T'], intermediate=True)
+x = reverse_process(model, PARAMS, B=10, T=PARAMS['T'], intermediate=False)
 save_as_grid(np.array(x), '{}_samples_{}_{}_{}_{}_{}'.format(PARAMS['data'], 
                                                             PARAMS['learning_rate'], 
                                                             PARAMS['embedding_dim'],

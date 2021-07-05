@@ -12,9 +12,18 @@ Implementation codes are written with reference to the following github reposito
 Reproduction of "[Denoising Diffusion Probabilistic Models](https://arxiv.org/abs/2006.11239)" in Tensorflow 2.0.
 Implementation codes are written with reference to the following github repositories:
 - https://github.com/hojonathanho/diffusion
+
 ### result
 - mnist
 <center><img  src="https://github.com/an-seunghwan/generative/blob/main/ddpm/assets/mnist_samples_0.0002_32_1000_0.0001_0.02.png?raw=true" width="800"  height="350"></center>
+
+- cifar10
+<center><img  src="https://github.com/an-seunghwan/generative/blob/main/ddpm/assets/cifar10_samples_0.0001_48_1000_0.0001_0.02.png?raw=true" width="800"  height="350"></center>
+
+## 3. Score-Based Generative Modeling through Stochastic Differential Equations
+Reproduction of "[Score-Based Generative Modeling through Stochastic Differential Equations](https://arxiv.org/pdf/2011.13456)" in Tensorflow 2.0.
+Implementation codes are written with reference to the following github repositories:
+- https://github.com/yang-song/score_sde
 
 <!-- ## 2. Gaussian Process Prior Variational Autoencoders
 - https://github.com/ratschlab/SVGP-VAE -->

@@ -19,14 +19,14 @@ import matplotlib.pyplot as plt
 import os
 os.chdir('/home1/prof/jeon/an/generative/ddpm')
 
-from modules import models2
+from modules import models1
 #%%
 PARAMS = {
     "batch_size": 128,
     "epochs": 300000, 
     "learning_rate": 0.0001, 
     "data": "cifar10", 
-    "embedding_dim": 32, 
+    "embedding_dim": 48, 
     "T": 1000,
     "beta_start": 0.0001,
     "beta_end": 0.02,
@@ -82,7 +82,7 @@ alphas_sqrt = np.sqrt(alphas)
 alphas_cumprod_sqrt = np.sqrt(np.cumprod(alphas, axis=0))
 alphas_cumprod_one_minus_sqrt = np.sqrt(1 - np.cumprod(alphas, axis=0))
 #%%
-model = models2.build_unet(PARAMS, PARAMS['embedding_dim'], dropout=0., embedding_dim_mult=(1, 2, 4, 8), num_res_blocks=2, attn_resolutions=(16, ), resamp_with_conv=True)
+model = models1.build_unet(PARAMS, PARAMS['embedding_dim'], dropout=0., embedding_dim_mult=(1, 2, 4, 8), num_res_blocks=2, attn_resolutions=(16, ), resamp_with_conv=True)
 optimizer = K.optimizers.Adam(learning_rate=PARAMS['learning_rate'])
 
 @tf.function
